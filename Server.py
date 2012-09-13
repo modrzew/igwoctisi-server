@@ -14,8 +14,6 @@ if __name__ == "__main__":
 	else:
 		HOST, PORT = "localhost", 23456
 
-	print(HOST, PORT)
-
 	# Create server object
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
 	ip, port = server.server_address
