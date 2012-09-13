@@ -4,11 +4,17 @@ import Communication
 import Game
 import Logic
 import Common
+import sys
 
 
 if __name__ == "__main__":
 	# Define the server address
-	HOST, PORT = "localhost", 23456
+	if len(sys.argv) == 3:
+		HOST, PORT = str(sys.argv[1]), int(sys.argv[2])
+	else:
+		HOST, PORT = "localhost", 23456
+
+	print(HOST, PORT)
 
 	# Create server object
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
@@ -20,8 +26,9 @@ if __name__ == "__main__":
 	requestQueryChecker.isRunning = True
 	requestQueryChecker.start()
 
+	# And serve... forever!
 	try:
 		server.serve_forever()
-	except KeyboardInterrupt:
+	except KeyboardInterrupt: # When Ctrl+C is hit
 		Common.consoleMessage('Shutting down server.')
 		requestQueryChecker.isRunning = False
