@@ -1,12 +1,11 @@
 # -*- coding: utf-8 *-*
 import Model
 import Common
-import Game
 import SocketServer
 import json
-import time
 import threading
 import Queue
+import PlayerState
 
 requestQuery = Queue.Queue()
 
@@ -16,7 +15,7 @@ class RequestQueryChecker(threading.Thread):
 			try:
 				request = requestQuery.get(True, 1)
 				user = request[0]
-				response = Game.request(request[1])
+				response = user.state.request(request[0], request[1])
 				user.send(response)
 			except Queue.Empty: # Queue is empty, so... do another loop
 				pass
@@ -25,8 +24,9 @@ class RequestQueryChecker(threading.Thread):
 class RequestHandler(SocketServer.StreamRequestHandler):
 	def handle(self):
 		Common.consoleMessage('Socket ' + str(self.request.getsockname()) + ' connected')
-		self.user = Model.User(self)
-		Model.users.append(self.user)
+		self.player = Model.Player(self)
+		self.player.state = PlayerState.NotLoggedIn()
+		Model.players.append(self.player)
 
 		while True:
 			data = self.rfile.readline()
@@ -37,7 +37,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 				data = json.loads(data.strip())
 				if 'type' in data and 'id' in data and 'object' in data:
 					# Here we add request to the query
-					requestQuery.put((self.user, data))
+					requestQuery.put((self.player, data))
 				else:
 					id = data['id'] if 'id' in data else ''
 					self.wfile.write(Common.jsonError('json_missing_fields', id))

@@ -1,8 +1,5 @@
 # -*- coding: utf-8 *-*
-import Model
 import Communication
-import Game
-import Logic
 import Common
 import sys
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 *-*
-import Model
 from datetime import datetime
 import time
 import json
