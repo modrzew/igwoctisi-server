@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	# Create server object
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
 	ip, port = server.server_address
-	Common.consoleMessage('Server started!')
+	Common.console_message('Server started!')
 
 	# Run requestQueryChecker
 	requestQueryChecker = Communication.RequestQueryChecker()
@@ -25,5 +25,5 @@ if __name__ == "__main__":
 	try:
 		server.serve_forever()
 	except KeyboardInterrupt: # When Ctrl+C is hit
-		Common.consoleMessage('Shutting down server.')
+		Common.console_message('Shutting down server.')
 		requestQueryChecker.isRunning = False

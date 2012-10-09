@@ -6,6 +6,7 @@ import json
 import threading
 import Queue
 import PlayerState
+import time
 
 requestQuery = Queue.Queue()
 
@@ -16,14 +17,17 @@ class RequestQueryChecker(threading.Thread):
 				request = requestQuery.get(True, 1)
 				user = request[0]
 				response = user.state.request(request[0], request[1])
-				user.send(response)
+				# If we get None, we assume everything is ok and there is no need to send anything back
+				if response is not None:
+					user.send(response['header'])
+					user.send(response['message'])
 			except Queue.Empty: # Queue is empty, so... do another loop
 				pass
 
 
 class RequestHandler(SocketServer.StreamRequestHandler):
 	def handle(self):
-		Common.consoleMessage('Socket ' + str(self.request.getsockname()) + ' connected')
+		Common.console_message('Socket ' + str(self.request.getsockname()) + ' connected')
 		self.player = Model.Player(self)
 		self.player.state = PlayerState.NotLoggedIn()
 		Model.players.append(self.player)
@@ -31,7 +35,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		while True:
 			data = self.rfile.readline()
 			if data == '': # Socket disconnected
-				Common.consoleMessage('Socket ' + str(self.request.getsockname()) + ' disconnected')
+				Common.console_message('Socket ' + str(self.request.getsockname()) + ' disconnected')
 				break
 			try:
 				data = json.loads(data.strip())
@@ -40,9 +44,9 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 					requestQuery.put((self.player, data))
 				else:
 					id = data['id'] if 'id' in data else ''
-					self.wfile.write(Common.jsonError('json_missing_fields', id))
+					self.wfile.write(Common.json_error('json_missing_fields', id))
 			except ValueError:
-				self.wfile.write(Common.jsonError('json_parse_failed', ''))
+				self.wfile.write(Common.json_error('json_parse_failed', ''))
 
 
 	def finish(self):

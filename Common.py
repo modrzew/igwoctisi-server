@@ -6,20 +6,16 @@ import hashlib
 
 h = hashlib.new('sha1')
 
-def consoleMessage(msg):
+def console_message(msg):
 	now = datetime.today()
 	print('[' + now.strftime('%H:%M:%S') + '] ' + msg)
 
-def jsonMessage(type, object, id):
-	return json.dumps({'type': type, 'object': object, 'id': id})
+def json_message(type, object, id):
+	return {'header': json.dumps({'type': type, 'id': id}), 'message': json.dumps(object)}
 
-def jsonError(code, id):
-	return jsonMessage('error', code, id)
+def json_error(code, id):
+	return json_message('error', code, id)
 
-def jsonOk(id):
-	return jsonMessage('ok', None, id)
-
-
-def randomId():
+def random_id():
 	h.update(str(time.time()))
 	return h.hexdigest()[0:12]
