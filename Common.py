@@ -14,7 +14,7 @@ def json_message(type, object, id):
 	return {'header': json.dumps({'type': type, 'id': id}), 'message': json.dumps(object)}
 
 def json_error(code, id):
-	return json_message('error', code, id)
+	return json_message('error', {'message': code}, id)
 
 def json_ok(id):
 	return json_message('ok', None, id)

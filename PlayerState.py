@@ -72,7 +72,7 @@ class InLobby:
 		# Chatting
 		if request['type'] == 'chat':
 			# Object is just a string with message
-			msg = request['object']
+			msg = request['object']['message']
 			# Broadcast message to all users in lobby
 			t = datetime.today().strftime('%H:%M')
 			for p in player.current_game.players:

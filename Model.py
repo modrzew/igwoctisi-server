@@ -13,8 +13,9 @@ class Player:
 		self.current_game = None
 		self.last_message_id = 0
 
-	def send(self, jsonObject):
-		self.thread.wfile.write(jsonObject + '\n')
+	def send(self, response):
+		self.thread.wfile.write(response['header'] + '\n')
+		self.thread.wfile.write(response['message'] + '\n')
 
 	def get_next_message_id(self):
 		self.last_message_id += 1

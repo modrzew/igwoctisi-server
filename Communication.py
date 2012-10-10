@@ -15,12 +15,11 @@ class RequestQueryChecker(threading.Thread):
 		while self.isRunning:
 			try:
 				request = requestQuery.get(True, 1)
-				user = request[0]
-				response = user.state.request(request[0], request[1])
+				player = request[0]
+				response = player.state.request(request[0], request[1])
 				# If we get None, we assume everything is ok and there is no need to send anything back
-				if response is not None:
-					user.send(response['header'])
-					user.send(response['message'])
+				if response:
+					player.send(response)
 			except Queue.Empty: # Queue is empty, so... do another loop
 				pass
 
@@ -33,7 +32,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		Model.players.append(self.player)
 
 		while True:
-			data = self.rfile.readline()
+			data = self.rfile.readline().rstrip('\r\n')
 			if data == '': # Socket disconnected
 				Common.console_message('Socket ' + str(self.request.getsockname()) + ' disconnected')
 				break
@@ -44,9 +43,12 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 					requestQuery.put((self.player, data))
 				else:
 					id = data['id'] if 'id' in data else ''
-					self.wfile.write(Common.json_error('json_missing_fields', id))
+					response = Common.json_error('json_missing_fields', id)
+					self.player.send(response)
 			except ValueError:
-				self.wfile.write(Common.json_error('json_parse_failed', ''))
+				id = data['id'] if 'id' in data else ''
+				response = Common.json_error('json_parse_failed', id)
+				self.player.send(response)
 
 
 	def finish(self):
