@@ -2,7 +2,7 @@
 
 players = []
 games = []
-lastGameId = 1
+last_game_id = 1
 
 
 class Player:
@@ -10,10 +10,15 @@ class Player:
 		self.thread = thread
 		self.username = ''
 		self.state = None
-		self.currentGame = None
+		self.current_game = None
+		self.last_message_id = 0
 
 	def send(self, jsonObject):
-		self.thread.wfile.write(jsonObject)
+		self.thread.wfile.write(jsonObject + '\n')
+
+	def get_next_message_id(self):
+		self.last_message_id += 1
+		return self.last_message_id
 
 
 class Game:
@@ -21,8 +26,10 @@ class Game:
 	NOT_STARTED = 1
 
 	def __init__(self):
-		global lastGameId
+		global last_game_id
 		self.players = []
-		self.id = lastGameId
+		self.id = last_game_id
 		self.state = Game.NOT_STARTED
-		lastGameId += 1
+		self.name = ''
+		self.map = None
+		last_game_id += 1

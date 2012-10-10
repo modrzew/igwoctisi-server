@@ -16,6 +16,9 @@ def json_message(type, object, id):
 def json_error(code, id):
 	return json_message('error', code, id)
 
+def json_ok(id):
+	return json_message('ok', None, id)
+
 def random_id():
 	h.update(str(time.time()))
 	return h.hexdigest()[0:12]
