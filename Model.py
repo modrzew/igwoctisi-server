@@ -15,7 +15,8 @@ class Player:
 
 	def send(self, response):
 		self.thread.wfile.write(response['header'] + '\n')
-		self.thread.wfile.write(response['message'] + '\n')
+		if response['message']:
+			self.thread.wfile.write(response['message'] + '\n')
 
 	def get_next_message_id(self):
 		self.last_message_id += 1

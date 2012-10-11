@@ -12,10 +12,11 @@ class NotLoggedIn:
 			if 'username' in request['object'] and 'password' in request['object']:
 				player.username = request['object']['username']
 				player.state = LoggedIn()
+				Common.console_message('%s logged in' % (player.username))
 				return Common.json_ok(request['id'])
 			else:
-				return Common.json_error('login_failed', request['id'])
-		return Common.json_error('invalid_command', request['id'])
+				return Common.json_error('loginFailed', request['id'])
+		return Common.json_error('invalidCommand', request['id'])
 
 
 class LoggedIn:
@@ -27,30 +28,32 @@ class LoggedIn:
 
 
 		# Creating new game
-		if request['type'] == 'game_create':
+		if request['type'] == 'gameCreate':
 			g = Model.Game()
 			g.name = request['object']['name']
 			g.players.append(player)
 			Model.games.append(g)
 			player.state = InLobby()
 			player.current_game = g
+			Common.console_message('%s created game "%s" (#%d)' % (player.username, g.name, g.id))
 			return None
 
 
 		# Listing available games
-		if request['type'] == 'game_list':
+		if request['type'] == 'gameList':
 			# Listing all games that have not started yet
 			game_list = [{'lobbyId': g.id, 'playersCount': len(g.players)} for g in Model.games if g.state == Model.Game.NOT_STARTED]
+			Common.console_message('%s listed for available games (%d found)' % (player.username, len(game_list)))
 			if not game_list:
-				return Common.json_error('game_list_empty', request['id'])
-			return Common.json_message('game_list', game_list, request['id'])
+				return Common.json_error('gameListEmpty', request['id'])
+			return Common.json_message('gameList', game_list, request['id'])
 
 
 		# Joining a game
-		if request['type'] == 'game_join':
+		if request['type'] == 'gameJoin':
 			game_list = [g for g in Model.games if g.id == request['object']['lobbyId'] and g.state == Model.Game.NOT_STARTED]
 			if not game_list:
-				return Common.json_error('game_invalid_id', request['id'])
+				return Common.json_error('gameInvalidId', request['id'])
 			g = game_list[0]
 			# TODO error when game full
 			#if len(g.players) >= g.max_players:
@@ -60,11 +63,12 @@ class LoggedIn:
 			player.state = InLobby()
 			# Notice all players in lobby that about fresh blood
 			t = datetime.today().strftime('%H:%M')
+			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('game_player_joined', {'username': p.username, 'time': t}, p.get_next_message_id()))
-			return Common.json_message('game_info', {'name': g.name, 'players': [p.username for p in g.players]})
+				p.send(Common.json_message('gamePlayerJoined', {'username': p.username, 'time': t}, p.get_next_message_id()))
+			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]})
 
-		return Common.json_error('invalid_command', request['id'])
+		return Common.json_error('invalidCommand', request['id'])
 
 
 class InLobby:
@@ -75,6 +79,7 @@ class InLobby:
 			msg = request['object']['message']
 			# Broadcast message to all users in lobby
 			t = datetime.today().strftime('%H:%M')
+			Common.console_message('In "%s" (#%d), %s chatted: %s' % (player.current_game.name, player.current_game.id, player.username, msg))
 			for p in player.current_game.players:
 				p.send(Common.json_message('chat', {'username': player.username, 'message': msg, 'time': t}, p.get_next_message_id()))
 			return None

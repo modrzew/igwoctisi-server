@@ -32,22 +32,22 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		Model.players.append(self.player)
 
 		while True:
-			data = self.rfile.readline().rstrip('\r\n')
+			data = self.rfile.readline()
 			if data == '': # Socket disconnected
 				Common.console_message('Socket ' + str(self.request.getsockname()) + ' disconnected')
 				break
+			data = data.rstrip('\r\n')
 			try:
 				data = json.loads(data.strip())
 				if 'type' in data and 'id' in data and 'object' in data:
 					# Here we add request to the query
 					requestQuery.put((self.player, data))
 				else:
-					id = data['id'] if 'id' in data else ''
-					response = Common.json_error('json_missing_fields', id)
+					id = data['id'] if 'id' in data else 0
+					response = Common.json_error('jsonMissingFields', id)
 					self.player.send(response)
 			except ValueError:
-				id = data['id'] if 'id' in data else ''
-				response = Common.json_error('json_parse_failed', id)
+				response = Common.json_error('jsonParseFailed', 0)
 				self.player.send(response)
 
 
