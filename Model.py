@@ -1,4 +1,5 @@
 # -*- coding: utf-8 *-*
+import json
 
 players = []
 games = []
@@ -14,9 +15,9 @@ class Player:
 		self.last_message_id = 0
 
 	def send(self, response):
-		self.thread.wfile.write(response['header'] + '\n')
+		self.thread.wfile.write(json.dumps(response['header']) + '\n')
 		if response['message']:
-			self.thread.wfile.write(response['message'] + '\n')
+			self.thread.wfile.write(json.dumps(response['message']) + '\n')
 
 	def get_next_message_id(self):
 		self.last_message_id += 1
@@ -34,4 +35,17 @@ class Game:
 		self.state = Game.NOT_STARTED
 		self.name = ''
 		self.map = None
+		self.hosting_player = None
 		last_game_id += 1
+
+
+class Map:
+	def __init__(self):
+		# Planet: {id, name, base_units_per_turn}
+		self.planets = []
+		# Link: {source, target}
+		self.links = []
+		# System: {name, planetsId[]}
+		self.systems = []
+		# Starting data: [planetId]
+		self.starting_data = []

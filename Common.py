@@ -11,7 +11,7 @@ def console_message(msg):
 	print('[' + now.strftime('%H:%M:%S') + '] ' + msg)
 
 def json_message(type, object, id):
-	return {'header': json.dumps({'type': type, 'id': id}), 'message': json.dumps(object)}
+	return {'header': {'type': type, 'id': id}, 'message': object}
 
 def json_error(code, id):
 	return json_message('error', {'message': code}, id)
