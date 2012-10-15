@@ -3,11 +3,13 @@ import Communication
 import Common
 import sys
 
-
 if __name__ == "__main__":
+	Communication.DEBUG_MODE = False
 	# Define the server address
-	if len(sys.argv) == 3:
+	if len(sys.argv) >= 3:
 		HOST, PORT = str(sys.argv[1]), int(sys.argv[2])
+		if len(sys.argv) == 4:
+			Communication.DEBUG_MODE = (sys.argv[3] == 'debug')
 	else:
 		HOST, PORT = "localhost", 23456
 
@@ -15,6 +17,8 @@ if __name__ == "__main__":
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
 	ip, port = server.server_address
 	Common.console_message('Server started!')
+	if Communication.DEBUG_MODE:
+		Common.console_message('Debug mode is ON')
 
 	# Run requestQueryChecker
 	requestQueryChecker = Communication.RequestQueryChecker()

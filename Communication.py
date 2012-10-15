@@ -9,6 +9,7 @@ import PlayerState
 import time
 
 requestQuery = Queue.Queue()
+DEBUG_MODE = False
 
 class RequestQueryChecker(threading.Thread):
 	def run(self):
@@ -25,24 +26,22 @@ class RequestQueryChecker(threading.Thread):
 
 class RequestHandler(SocketServer.StreamRequestHandler):
 	def handle(self):
-		Common.console_message('Socket ' + str(self.request.getpeername()) + ' connected')
+		Common.console_message('%s connected' % self.request.getpeername()[0])
 		self.player = Model.Player(self)
 		self.player.state = PlayerState.NotLoggedIn()
 		Model.players.append(self.player)
 
 		while True:
-			# TODO poprawić to, co namek zjebał (ja chcę dostawać jeden obiekt i chuj)
-			# Get the header
-			header = self.rfile.readline()
-			if header == '': # Socket disconnected
-				Common.console_message('Socket ' + str(self.request.getsockname()) + ' disconnected')
+			data = self.rfile.readline()
+			if data == '': # Socket disconnected
+				Common.console_message('%s disconnected' % self.request.getpeername()[0])
 				break
-			header = header.rstrip('\r\n')
+			data = data.rstrip('\r\n')
+			if DEBUG_MODE:
+				Common.console_message('[RAW] %s: %s' % (self.request.getpeername()[0], data))
 			# Get the object
-			object = self.rfile.readline()
 			try:
-				data = json.loads(header.strip())
-				data['object'] = json.loads(object)
+				data = json.loads(data.strip())
 				if 'type' in data and 'id' in data and 'object' in data:
 					# Here we add request to the query
 					requestQuery.put((self.player, data))

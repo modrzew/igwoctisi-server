@@ -10,11 +10,10 @@ class NotLoggedIn:
 	def request(self, player, request):
 		# Logging in
 		if request['type'] == 'login':
-			# TODO login -> username
-			if 'login' in request['object'] and 'password' in request['object']:
-				player.username = request['object']['login']
+			if 'username' in request['object'] and 'password' in request['object']:
+				player.username = request['object']['username']
 				player.state = LoggedIn()
-				Common.console_message('%s logged in' % player.username)
+				Common.console_message('%s logged in as %s' % (player.thread.request.getpeername()[0], player.username))
 				return Common.json_ok(request['id'])
 			else: # Some fields not found
 				return Common.json_error('invalidParameters', request['id'])
@@ -40,13 +39,13 @@ class LoggedIn:
 			player.state = InLobby()
 			player.current_game = g
 			Common.console_message('%s created game "%s" (#%d)' % (player.username, g.name, g.id))
-			return None
+			return Common.json_ok(request['id'])
 
 
 		# Listing available games
 		if request['type'] == 'gameList':
 			# Listing all games that have not started yet
-			game_list = [{'lobbyId': g.id, 'playersCount': len(g.players)} for g in Model.games if g.state == Model.Game.NOT_STARTED]
+			game_list = [{'lobbyId': g.id, 'name': g.name, 'playersCount': len(g.players)} for g in Model.games if g.state == Model.Game.NOT_STARTED]
 			Common.console_message('%s listed for available games (%d found)' % (player.username, len(game_list)))
 			if not game_list: # No games found
 				return Common.json_error('gameListEmpty', request['id'])
@@ -71,7 +70,7 @@ class LoggedIn:
 			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
 				p.send(Common.json_message('gamePlayerJoined', {'username': p.username, 'time': t}, p.get_next_message_id()))
-			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]})
+			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]}, player.get_next_message_id())
 
 		return Common.json_error('invalidCommand', request['id'])
 

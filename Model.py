@@ -12,12 +12,12 @@ class Player:
 		self.username = ''
 		self.state = None
 		self.current_game = None
-		self.last_message_id = 0
+		self.last_message_id = 65535
 
 	def send(self, response):
 		self.thread.wfile.write(json.dumps(response['header']) + '\n')
-		if response['message']:
-			self.thread.wfile.write(json.dumps(response['message']) + '\n')
+		if response['object']:
+			self.thread.wfile.write(json.dumps(response['object']) + '\n')
 
 	def get_next_message_id(self):
 		self.last_message_id += 1
