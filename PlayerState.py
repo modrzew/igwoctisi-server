@@ -70,7 +70,7 @@ class LoggedIn:
 			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
 				p.send(Common.json_message('gamePlayerJoined', {'username': p.username, 'time': t}, p.get_next_message_id()))
-			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]}, player.get_next_message_id())
+			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]}, request['id'])
 
 		return Common.json_error('invalidCommand', request['id'])
 
@@ -104,7 +104,6 @@ class InLobby:
 
 			# Notify all players in lobby about their loss
 			t = datetime.today().strftime('%H:%M')
-			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
 				p.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.get_next_message_id()))
 			# TODO remove player from game (how the hell do you remove object from list in python?)
