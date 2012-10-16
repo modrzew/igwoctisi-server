@@ -94,22 +94,23 @@ class InLobby:
 		if request['type'] == 'gameLeave':
 			g = player.current_game
 			Common.console_message('%s left the game "%s" (#%d)' % (player.username, g.name, g.id))
+			player.current_game = None
+			player.state = LoggedIn()
+
 			if g.hosting_player is player: # If host leaves, kick everyone out of the game
 				for p in [p for p in g.players if p is not player]:
 					p.send(Common.json_message('gameKick', None, p.get_next_message_id()))
 					p.current_game = None
 					p.state = LoggedIn()
-					# TODO remove players from game
-				# TODO how the hell do you destroy an object?
+				Model.games.remove(g)
+				del(g)
+				return None
 
+			g.players.remove(player)
 			# Notify all players in lobby about their loss
 			t = datetime.today().strftime('%H:%M')
 			for p in [p for p in g.players if p is not player]:
 				p.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.get_next_message_id()))
-			# TODO remove player from game (how the hell do you remove object from list in python?)
-			#g.players
-			player.current_game = None
-			player.state = LoggedIn()
 			return None
 
 
@@ -126,8 +127,8 @@ class InLobby:
 				return Common.json_error('gameKickFailed', request['id'])
 			p = p[0]
 			Common.console_message('%s was kicked out of the game "%s" (#%d)' % (p.username, g.name, g.id))
-			# TODO removing player from game
 			p.current_game = None
+			g.players.remove(p)
 			p.state = LoggedIn()
 			# Notify the others about sudden leave, and the one kicked about... well, being kicked
 			for p2 in g.players:

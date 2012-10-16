@@ -1,5 +1,7 @@
 # -*- coding: utf-8 *-*
 import json
+import Communication
+import Common
 
 players = []
 games = []
@@ -15,6 +17,8 @@ class Player:
 		self.last_message_id = 65535
 
 	def send(self, response):
+		if Communication.DEBUG_MODE:
+			Common.console_message('[SEND] to %s: %s' % (self.thread.request.getpeername()[0], response))
 		self.thread.wfile.write(json.dumps(response['header']) + '\n')
 		if response['object']:
 			self.thread.wfile.write(json.dumps(response['object']) + '\n')

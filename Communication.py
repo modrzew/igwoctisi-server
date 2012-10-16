@@ -38,7 +38,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 				break
 			data = data.rstrip('\r\n')
 			if DEBUG_MODE:
-				Common.console_message('[RAW] %s: %s' % (self.request.getpeername()[0], data))
+				Common.console_message('[GET] %s: %s' % (self.request.getpeername()[0], data))
 			# Get the object
 			try:
 				data = json.loads(data.strip())
