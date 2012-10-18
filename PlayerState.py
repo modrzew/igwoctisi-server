@@ -70,7 +70,7 @@ class LoggedIn:
 			t = datetime.today().strftime('%H:%M')
 			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('gamePlayerJoined', {'username': p.username, 'time': t}, p.get_next_message_id()))
+				p.send(Common.json_message('gamePlayerJoined', {'username': player.username, 'time': t}, p.get_next_message_id()))
 			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]}, request['id'])
 
 		return Common.json_error('invalidCommand', request['id'])
@@ -143,8 +143,17 @@ class InLobby:
 
 		# Starting the game
 		if request['type'] == 'gameStart':
-			pass
+			g = player.current_game
+			if g.hosting_player is not player: # Is kicking player the host?
+				return Common.json_error('gameStartFailed', request['id'])
+			for p in [p for p in g.players if p is not player]:
+				p.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.get_next_message_id()))
+			# Run Game thread
+			g.start()
+			return Common.json_message('gameStarted', None, request['id'])
 
 class InGame:
 	def request(self, player, request):
-		pass
+		# Sending moves list
+		if request['type'] == 'moves':
+			pass
