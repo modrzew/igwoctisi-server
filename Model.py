@@ -34,6 +34,7 @@ class Game(threading.Thread):
 	# States of game
 	NOT_STARTED = 1
 	IN_PROGRESS = 2
+	FINISHED = 3
 
 	def __init__(self):
 		super(Game, self).__init__()
@@ -54,18 +55,18 @@ class Game(threading.Thread):
 		Common.console_message('Game %d started!' % self.id)
 
 		while self.state == Game.IN_PROGRESS:
+			round_time = 30
 			for p in self.players:
 				object_to_send = {
 					'players': [pl.username for pl in self.players],
 					'map': [],
 					'tech': [],
 					'fleetsToDeploy': 6,
-					'roundTime': 300
+					'roundTime': round_time
 				}
 				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
 				p.send(Common.json_message('roundStart', object_to_send, p.get_next_message_id()))
-			round_time = 300
-			while round_time > 0:
+			while round_time > 0 and self.state == Game.IN_PROGRESS:
 				Common.console_message('Game %d, round %d: %d seconds left' % (self.id, self.round, round_time))
 				if len(self.round_orders) == len(self.players): # Everyone sent their orders
 					break
@@ -75,6 +76,8 @@ class Game(threading.Thread):
 
 			self.round += 1
 
+	def game_end(self):
+		self.state = Game.FINISHED
 
 class Map:
 	def __init__(self, map):

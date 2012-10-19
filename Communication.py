@@ -34,7 +34,8 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		while True:
 			data = self.rfile.readline()
 			if data == '': # Socket disconnected
-				Common.console_message('%s disconnected' % self.request.getpeername()[0])
+				self.player.state.disconnect(self.player)
+				Common.console_message('%s (%s) disconnected' % (self.player.username, self.request.getpeername()[0]))
 				break
 			data = data.rstrip('\r\n')
 			if DEBUG_MODE:

@@ -6,6 +6,14 @@ from datetime import datetime
 # Each class (state) must have request(player, request) method
 # We expect request to be already validated as JSON object containing type, object and id fields
 
+class Disconnected:
+	def request(self, player, request):
+		return None
+
+	def disconnect(self, player):
+		player.state = Disconnected()
+
+
 class NotLoggedIn:
 	def request(self, player, request):
 		# Logging in
@@ -18,6 +26,9 @@ class NotLoggedIn:
 			else: # Some fields not found
 				return Common.json_error('invalidParameters', request['id'])
 		return Common.json_error('invalidCommand', request['id'])
+
+	def disconnect(self, player):
+		player.state = Disconnected()
 
 
 class LoggedIn:
@@ -75,8 +86,29 @@ class LoggedIn:
 
 		return Common.json_error('invalidCommand', request['id'])
 
+	def disconnect(self, player):
+		player.state = Disconnected()
+
 
 class InLobby:
+	# What to do when one player leaves/disconnects (notify everyone, or kick them)
+	def player_leave(self, player):
+		g = player.current_game
+		if g.hosting_player is player: # If host leaves, kick everyone out of the game
+			for p in [p for p in g.players if p is not player]:
+				p.send(Common.json_message('gameKick', None, p.get_next_message_id()))
+				p.current_game = None
+				p.state = LoggedIn()
+			Model.games.remove(g)
+			del(g)
+		else:
+			g.players.remove(player)
+			# Notify all players in lobby about their loss
+			t = datetime.today().strftime('%H:%M')
+			for p in g.players:
+				p.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.get_next_message_id()))
+			player.current_game = None
+
 	def request(self, player, request):
 		# Chatting
 		if request['type'] == 'chat':
@@ -93,25 +125,9 @@ class InLobby:
 
 		# Leaving the game
 		if request['type'] == 'gameLeave':
-			g = player.current_game
-			Common.console_message('%s left the game "%s" (#%d)' % (player.username, g.name, g.id))
-			player.current_game = None
+			Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
+			self.player_leave(player)
 			player.state = LoggedIn()
-
-			if g.hosting_player is player: # If host leaves, kick everyone out of the game
-				for p in [p for p in g.players if p is not player]:
-					p.send(Common.json_message('gameKick', None, p.get_next_message_id()))
-					p.current_game = None
-					p.state = LoggedIn()
-				Model.games.remove(g)
-				del(g)
-				return None
-
-			g.players.remove(player)
-			# Notify all players in lobby about their loss
-			t = datetime.today().strftime('%H:%M')
-			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.get_next_message_id()))
 			return None
 
 
@@ -146,14 +162,31 @@ class InLobby:
 			g = player.current_game
 			if g.hosting_player is not player: # Is kicking player the host?
 				return Common.json_error('gameStartFailed', request['id'])
-			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.get_next_message_id()))
+			for p in g.players:
+				if p is player:
+					p.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.get_next_message_id()))
+				else:
+					p.send(Common.json_message('gameStarted', None, request['id']))
+				p.state = InGame()
 			# Run Game thread
 			g.start()
-			return Common.json_message('gameStarted', None, request['id'])
+			return None
+
+	def disconnect(self, player):
+		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
+		self.player_leave(player)
+		player.state = Disconnected()
+
 
 class InGame:
+	# What to do when one player leaves/disconnects
+	def player_leave(self, player):
+		pass
+
 	def request(self, player, request):
 		# Sending moves list
 		if request['type'] == 'moves':
 			pass
+
+	def disconnect(self, player):
+		pass
