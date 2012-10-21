@@ -21,7 +21,7 @@ class NotLoggedIn:
 			if 'username' in request['object'] and 'password' in request['object']:
 				player.username = request['object']['username']
 				player.state = LoggedIn()
-				Common.console_message('%s logged in as %s' % (player.thread.request.getpeername()[0], player.username))
+				Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
 				return Common.json_ok(request['id'])
 			else: # Some fields not found
 				return Common.json_error('invalidParameters', request['id'])
@@ -81,7 +81,7 @@ class LoggedIn:
 			t = datetime.today().strftime('%H:%M')
 			Common.console_message('%s joined the game "%s" (#%d)' % (player.username, g.name, g.id))
 			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('gamePlayerJoined', {'username': player.username, 'time': t}, p.get_next_message_id()))
+				p.socket.send(Common.json_message('gamePlayerJoined', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
 			return Common.json_message('gameInfo', {'name': g.name, 'players': [p.username for p in g.players]}, request['id'])
 
 		return Common.json_error('invalidCommand', request['id'])
@@ -96,7 +96,7 @@ class InLobby:
 		g = player.current_game
 		if g.hosting_player is player: # If host leaves, kick everyone out of the game
 			for p in [p for p in g.players if p is not player]:
-				p.send(Common.json_message('gameKick', None, p.get_next_message_id()))
+				p.socket.send(Common.json_message('gameKick', None, p.socket.get_next_message_id()))
 				p.current_game = None
 				p.state = LoggedIn()
 			Model.games.remove(g)
@@ -106,7 +106,7 @@ class InLobby:
 			# Notify all players in lobby about their loss
 			t = datetime.today().strftime('%H:%M')
 			for p in g.players:
-				p.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.get_next_message_id()))
+				p.socket.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.socket.get_next_message_id()))
 			player.current_game = None
 
 	def request(self, player, request):
@@ -119,7 +119,7 @@ class InLobby:
 			t = datetime.today().strftime('%H:%M')
 			Common.console_message('In "%s" (#%d), %s chatted: %s' % (player.current_game.name, player.current_game.id, player.username, msg))
 			for p in player.current_game.players:
-				p.send(Common.json_message('chat', {'username': player.username, 'message': msg, 'time': t}, p.get_next_message_id()))
+				p.socket.send(Common.json_message('chat', {'username': player.username, 'message': msg, 'time': t}, p.socket.get_next_message_id()))
 			return None
 
 
@@ -132,7 +132,7 @@ class InLobby:
 
 
 		# Kicking player out of the lobby
-		if request['type'] == 'gameKick':
+		if request['type'] == 'gamePlayerKick':
 			# TODO validation
 			g = player.current_game
 			if g.hosting_player is not player: # Is kicking player the host?
@@ -144,16 +144,15 @@ class InLobby:
 				return Common.json_error('gameKickFailed', request['id'])
 			p = p[0]
 			Common.console_message('%s was kicked out of the game "%s" (#%d)' % (p.username, g.name, g.id))
-			p.current_game = None
-			g.players.remove(p)
-			p.state = LoggedIn()
 			# Notify the others about sudden leave, and the one kicked about... well, being kicked
 			for p2 in g.players:
 				if p2 is p:
-					p2.send(Common.json_message('gameKick', None, p2.get_next_message_id()))
+					p2.socket.send(Common.json_message('gameKick', None, p2.socket.get_next_message_id()))
 				else:
-					p2.send(Common.json_message('gamePlayerKicked', {'username': p.username}, p2.get_next_message_id()))
-
+					p2.socket.send(Common.json_message('gamePlayerKicked', {'username': p.username}, p2.socket.get_next_message_id()))
+			p.current_game = None
+			g.players.remove(p)
+			p.state = LoggedIn()
 			return Common.json_ok(request['id'])
 
 
@@ -164,12 +163,12 @@ class InLobby:
 				return Common.json_error('gameStartFailed', request['id'])
 			for p in g.players:
 				if p is player:
-					p.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.get_next_message_id()))
+					p.socket.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.socket.get_next_message_id()))
 				else:
-					p.send(Common.json_message('gameStarted', None, request['id']))
+					p.socket.send(Common.json_message('gameStarted', None, request['id']))
 				p.state = InGame()
 			# Run Game thread
-			g.start()
+			g.manager.start()
 			return None
 
 	def disconnect(self, player):
@@ -181,12 +180,34 @@ class InLobby:
 class InGame:
 	# What to do when one player leaves/disconnects
 	def player_leave(self, player):
-		pass
+		g = player.current_game
+		g.players.remove(player)
+		if g.players: # Are there any players left?
+			# TODO ustawić planety gracza który wyszedł na "tambylcze"
+			# Notify players in game about their loss
+			t = datetime.today().strftime('%H:%M')
+			for p in g.players:
+				p.socket.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.socket.get_next_message_id()))
+		else: # Nobody left, remove the game!
+			g.state = Model.Game.FINISHED
+			Model.games.remove(g)
+			del(g)
+		player.current_game = None
+
 
 	def request(self, player, request):
+		# Leaving the game
+		if request['type'] == 'gameLeave':
+			Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
+			self.player_leave(player)
+			player.state = LoggedIn()
+			return None
+
 		# Sending moves list
 		if request['type'] == 'moves':
 			pass
 
 	def disconnect(self, player):
-		pass
+		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
+		self.player_leave(player)
+		player.state = Disconnected()

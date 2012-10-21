@@ -4,6 +4,7 @@ import Communication
 import Common
 import threading
 import time
+from GameManager import GameManager
 
 players = []
 games = []
@@ -11,33 +12,20 @@ last_game_id = 1
 
 
 class Player:
-	def __init__(self, thread):
-		self.thread = thread
+	def __init__(self, socket):
+		self.socket = socket
 		self.username = ''
 		self.state = None
 		self.current_game = None
-		self.last_message_id = 65535
-
-	def send(self, response):
-		if Communication.DEBUG_MODE:
-			Common.console_message('[SEND] to %s: %s' % (self.thread.request.getpeername()[0], response))
-		self.thread.wfile.write(json.dumps(response['header']) + '\n')
-		if response['object']:
-			self.thread.wfile.write(json.dumps(response['object']) + '\n')
-
-	def get_next_message_id(self):
-		self.last_message_id += 1
-		return self.last_message_id
 
 
-class Game(threading.Thread):
+class Game:
 	# States of game
 	NOT_STARTED = 1
 	IN_PROGRESS = 2
 	FINISHED = 3
 
 	def __init__(self):
-		super(Game, self).__init__()
 		global last_game_id
 		self.players = []
 		self.id = last_game_id
@@ -45,39 +33,9 @@ class Game(threading.Thread):
 		self.name = ''
 		self.map = None
 		self.hosting_player = None
+		self.manager = GameManager(self)
 		last_game_id += 1
 
-	def run(self):
-		self.state = Game.IN_PROGRESS
-		self.round = 1
-		self.round_orders = {}
-
-		Common.console_message('Game %d started!' % self.id)
-
-		while self.state == Game.IN_PROGRESS:
-			round_time = 30
-			for p in self.players:
-				object_to_send = {
-					'players': [pl.username for pl in self.players],
-					'map': [],
-					'tech': [],
-					'fleetsToDeploy': 6,
-					'roundTime': round_time
-				}
-				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
-				p.send(Common.json_message('roundStart', object_to_send, p.get_next_message_id()))
-			while round_time > 0 and self.state == Game.IN_PROGRESS:
-				Common.console_message('Game %d, round %d: %d seconds left' % (self.id, self.round, round_time))
-				if len(self.round_orders) == len(self.players): # Everyone sent their orders
-					break
-				round_time -= 1
-				time.sleep(1)
-			# Assume that round has ended
-
-			self.round += 1
-
-	def game_end(self):
-		self.state = Game.FINISHED
 
 class Map:
 	def __init__(self, map):

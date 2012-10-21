@@ -18,8 +18,8 @@ class RequestQueryChecker(threading.Thread):
 				request = requestQuery.get(True, 1)
 				player = request[0]
 				response = player.state.request(request[0], request[1])
-				if response: # If we get None, we assume everything is ok and there is no need to send anything back
-					player.send(response)
+				if response: # and not isinstance(player.state, PlayerState.Disconnected): # If we get None, we assume everything is ok and there is no need to send anything back
+					player.socket.send(response)
 			except Queue.Empty: # Queue is empty, so... do another loop
 				pass
 
@@ -30,6 +30,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		self.player = Model.Player(self)
 		self.player.state = PlayerState.NotLoggedIn()
 		Model.players.append(self.player)
+		self.last_message_id = 65535
 
 		while True:
 			data = self.rfile.readline()
@@ -54,9 +55,19 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 				response = Common.json_error('jsonParseFailed', 0)
 				self.player.send(response)
 
+	def send(self, response):
+		if DEBUG_MODE:
+			Common.console_message('[SEND] to %s: %s' % (self.request.getpeername()[0], response))
+		self.wfile.write(json.dumps(response['header']) + '\n')
+		if response['object']:
+			self.wfile.write(json.dumps(response['object']) + '\n')
+
+	def get_next_message_id(self):
+		self.last_message_id += 1
+		return self.last_message_id
 
 	def finish(self):
-		pass
+		Model.players.remove(self.player)
 
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
