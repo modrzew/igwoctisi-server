@@ -183,7 +183,9 @@ class InGame:
 		g = player.current_game
 		g.players.remove(player)
 		if g.players: # Are there any players left?
-			# TODO ustawić planety gracza który wyszedł na "tambylcze"
+			for p in g.map.planets:
+				if p.player is player:
+					p.player = None
 			# Notify players in game about their loss
 			t = datetime.today().strftime('%H:%M')
 			for p in g.players:
@@ -204,8 +206,15 @@ class InGame:
 			return None
 
 		# Sending moves list
-		if request['type'] == 'moves':
-			pass
+		if request['type'] == 'commands':
+			g = player.current_game
+			gm = player.current_game.manager
+			if player in gm.round_commands:
+				return Common.json_error('commandsAlreadySent', request['id'])
+			if not gm.set_round_commands(player, request['object']):
+				return Common.json_error('gameInvalidCommand', request['id'])
+			return Common.json_ok(request['id'])
+
 
 	def disconnect(self, player):
 		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
