@@ -59,7 +59,7 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		if DEBUG_MODE:
 			Common.console_message('[SEND] to %s: %s' % (self.request.getpeername()[0], response))
 		self.wfile.write(json.dumps(response['header']) + '\n')
-		if response['object']:
+		if response['object'] == [] or response['object']:
 			self.wfile.write(json.dumps(response['object']) + '\n')
 
 	def get_next_message_id(self):
