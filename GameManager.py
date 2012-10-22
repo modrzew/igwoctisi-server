@@ -31,7 +31,7 @@ class GameManager(threading.Thread):
 				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
 				p.socket.send(Common.json_message('roundStart', object_to_send, p.socket.get_next_message_id()))
 			while round_time > 0 and game.state == Model.Game.IN_PROGRESS:
-				Common.console_message('Game %d, round %d: %d seconds left' % (game.id, self.round, round_time))
+				#Common.console_message('Game %d, round %d: %d seconds left' % (game.id, self.round, round_time))
 				if len(self.round_commands) == len(game.players): # Everyone sent their orders
 					break
 				round_time -= 1

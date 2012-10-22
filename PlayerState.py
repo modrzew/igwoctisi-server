@@ -59,8 +59,6 @@ class LoggedIn:
 			# Listing all games that have not started yet
 			game_list = [{'lobbyId': g.id, 'name': g.name, 'playersCount': len(g.players)} for g in Model.games if g.state == Model.Game.NOT_STARTED]
 			Common.console_message('%s listed for available games (%d found)' % (player.username, len(game_list)))
-			if not game_list: # No games found
-				return Common.json_error('gameListEmpty', request['id'])
 			return Common.json_message('gameList', game_list, request['id'])
 
 
@@ -106,7 +104,7 @@ class InLobby:
 			# Notify all players in lobby about their loss
 			t = datetime.today().strftime('%H:%M')
 			for p in g.players:
-				p.socket.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.socket.get_next_message_id()))
+				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
 			player.current_game = None
 
 	def request(self, player, request):
@@ -163,9 +161,9 @@ class InLobby:
 				return Common.json_error('gameStartFailed', request['id'])
 			for p in g.players:
 				if p is player:
-					p.socket.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.socket.get_next_message_id()))
-				else:
 					p.socket.send(Common.json_message('gameStarted', None, request['id']))
+				else:
+					p.socket.send(Common.json_message('gameStart', {'map': g.map.raw_map}, p.socket.get_next_message_id()))
 				p.state = InGame()
 			# Run Game thread
 			g.manager.start()
@@ -183,9 +181,9 @@ class InGame:
 		g = player.current_game
 		g.players.remove(player)
 		if g.players: # Are there any players left?
-			for p in g.map.planets:
-				if p.player is player:
-					p.player = None
+			for (k, p) in g.map.planets.items():
+				if p['player'] is player:
+					p['player'] = None
 			# Notify players in game about their loss
 			t = datetime.today().strftime('%H:%M')
 			for p in g.players:
