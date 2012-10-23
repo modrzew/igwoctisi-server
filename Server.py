@@ -22,7 +22,6 @@ if __name__ == "__main__":
 
 	# Run requestQueryChecker
 	requestQueryChecker = Communication.RequestQueryChecker()
-	requestQueryChecker.isRunning = True
 	requestQueryChecker.start()
 
 	# And serve... forever!
@@ -30,4 +29,4 @@ if __name__ == "__main__":
 		server.serve_forever()
 	except KeyboardInterrupt: # When Ctrl+C is hit
 		Common.console_message('Shutting down server.')
-		requestQueryChecker.isRunning = False
+		requestQueryChecker.is_running = False

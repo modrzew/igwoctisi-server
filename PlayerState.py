@@ -98,7 +98,7 @@ class InLobby:
 				p.current_game = None
 				p.state = LoggedIn()
 			Model.games.remove(g)
-			del(g)
+			del g
 		else:
 			g.players.remove(player)
 			# Notify all players in lobby about their loss
@@ -191,7 +191,7 @@ class InGame:
 		else: # Nobody left, remove the game!
 			g.state = Model.Game.FINISHED
 			Model.games.remove(g)
-			del(g)
+			del g
 		player.current_game = None
 
 
@@ -205,7 +205,6 @@ class InGame:
 
 		# Sending moves list
 		if request['type'] == 'commands':
-			g = player.current_game
 			gm = player.current_game.manager
 			if player in gm.round_commands:
 				return Common.json_error('commandsAlreadySent', request['id'])

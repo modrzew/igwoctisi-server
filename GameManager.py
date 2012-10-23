@@ -3,6 +3,7 @@ import Common
 import Model
 import threading
 import time
+import random
 
 
 class GameManager(threading.Thread):
@@ -36,14 +37,84 @@ class GameManager(threading.Thread):
 					break
 				round_time -= 1
 				time.sleep(1)
-			# Assume that round has ended
+			# Assume that round has ended and we have everyone's orders
 
+			# Zero, randomize the players!
+			self.order_players()
+			# First, we put them in order: deploys first, moves next
+			commands = self.order_commands()
+			# And now let's execute them, shall we?
+			results = self.execute_commands(commands)
+			# Then send the results to all players
+			for p in self.game.players:
+				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
+
+			# To the next round!
 			self.round += 1
 
 	def set_round_commands(self, player, commands):
+		"""
+		Set round commands for a player
+		"""
 		# Check if everything can be executed
+		commands_temp = {'deploy': [], 'move': []}
 		for c in commands:
-			if not self.game.valid(player, c):
+			if not self.game.valid(player, c): # Invalid command
 				return False
-		# If so, set it as player's commands
-		self.round_commands[player] = commands
+
+			c['sourceId'] = int(c['sourceId'])
+			c['targetId'] = int(c['targetId'])
+			c['fleetCount'] = int(c['fleetCount'])
+
+			if c['type'] == 'deploy':
+				commands_temp['deploy'].append(c)
+			if c['type'] == 'move':
+				commands_temp['move'].append(c)
+		self.round_commands[player] = commands_temp
+
+	def order_players(self):
+		"""
+		Put players in order (currently random)
+		"""
+		p = self.game.players
+		random.shuffle(p)
+		self.players_order = p
+
+	def order_commands(self):
+		"""
+		Put commands in the same order self.players_order was put
+		As in: 1st command for P1, 1st command for P2 (...) 2nd command for P1, 2nd command for P2 and so on
+		"""
+		commands = []
+		# Deploy
+		move_while_break = False
+		while not move_while_break:
+			move_while_break = True # Assume that there are no orders left
+			for p in self.players_order:
+				if self.round_commands[p]['deploy']:
+					move_while_break = False # Oh, so there are some orders
+					commands.append({'player': p, 'command': self.round_commands[p]['deploy'].pop()})
+		# Move/attack
+		move_while_break = False
+		while not move_while_break:
+			move_while_break = True # Assume that there are no orders left
+			for p in self.players_order:
+				if self.round_commands[p]['move']:
+					move_while_break = False # Oh, so there are some orders
+					commands.append({'player': p, 'command': self.round_commands[p]['move'].pop()})
+		return commands
+
+	def execute_commands(self, commands):
+		"""
+		Execute given commands on a world state (Map)
+		"""
+		results = []
+
+		for c in commands['deploy']:
+			r = self.game.execute(c['player'], c['command'])
+			results.append(r)
+		for c in commands['move']:
+			r = self.game.execute(c['player'], c['command'])
+			results.append(r)
+
+		return results

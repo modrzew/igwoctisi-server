@@ -1,8 +1,5 @@
 # -*- coding: utf-8 *-*
 from datetime import datetime
-import time
-import json
-import hashlib
 
 def console_message(msg):
 	now = datetime.today()

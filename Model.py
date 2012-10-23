@@ -1,9 +1,4 @@
 # -*- coding: utf-8 *-*
-import json
-import Communication
-import Common
-import threading
-import time
 from GameManager import GameManager
 
 players = []
@@ -38,25 +33,25 @@ class Game:
 
 	def valid(self, player, command):
 		"""
-		Checks if order is valid for player.
-		order: type, sourceId, targetId, unitCount
+		Checks if command is valid for player.
+		command: type, sourceId, targetId, unitCount
 		"""
-		from_id = int(command['sourceId'])
-		to_id = int(command['toId'])
-		count = int(command['unitCount'])
+		from_id = command['sourceId']
+		to_id = command['targetId']
+		count = command['unitCount']
 
 		# Checking the basics
-		if from_id not in self.planets: # Wrong id
+		if to_id not in self.map.planets: # Wrong id
 			return False
-		from_planet = self.planets[from_id]
-		if from_planet['player'] is not player: # Player doesn't own this planet
-			return False
+		to_planet = self.map.planets[to_id]
 
 		# Move/Attack
 		if command['type'] == 'move':
-			if to_id not in self.planets: # Wrong id
+			if from_id not in self.map.planets: # Wrong id
 				return False
-			to_planet = self.planets[to_id]
+			from_planet = self.map.planets[from_id]
+			if from_planet['player'] is not player: # Player doesn't own this planet
+				return False
 			if to_planet not in from_planet['links']: # Planets must be linked
 				return False
 			if from_planet['fleets'] <= count: # At least one fleet must always stay behind
@@ -64,13 +59,37 @@ class Game:
 
 		# Deploy
 		if command['type'] == 'deploy': # Deploy
-			pass
+			if to_planet['player'] is not player: # Player doesn't own this planet
+				return False
 
 		# Tech
 		if command['type'] == 'tech': # Tech
 			return False
 
 		return True
+
+	def execute(self, player, command):
+		if self.valid(player, command):
+			ret = {'player': player.username, 'type': command['type']}
+			if command['type'] == 'deploy':
+				self.map.deploy(command['targetId'], command['fleetCount'])
+				ret.update({
+					'targetId': command['targetId'],
+					'fleetCount': command['fleetCount']
+				})
+
+			if command['type'] == 'move':
+				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
+					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
+					ret.update({
+						'sourceId': command['sourceId'],
+						'targetId': command['targetId'],
+						'fleetCount': command['fleetCount']
+					})
+				else: # Attack
+					pass
+
+			return ret
 
 class Map:
 	def __init__(self, map):
@@ -116,3 +135,12 @@ class Map:
 		"""
 		self.planets[from_id]['fleets'] -= count
 		self.planets[to_id]['fleets'] += count
+
+	def attack(self, from_id, to_id, count):
+		"""
+		Moves fleets from one planet to another, with intention of attacking.
+		from_id and to_id must correspond to planet IDs in self.planets.
+		Planets must belong to the same player, and there must be a link between them.
+		Fleet count on the source planet must be greater than count parameter (as 1 fleet must always stay behind).
+		"""
+		pass

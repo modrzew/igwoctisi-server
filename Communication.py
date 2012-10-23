@@ -6,14 +6,14 @@ import json
 import threading
 import Queue
 import PlayerState
-import time
 
 requestQuery = Queue.Queue()
 DEBUG_MODE = False
 
 class RequestQueryChecker(threading.Thread):
 	def run(self):
-		while self.isRunning:
+		self.is_running = True
+		while self.is_running:
 			try:
 				request = requestQuery.get(True, 1)
 				player = request[0]
@@ -50,16 +50,16 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 				else: # Missing fields
 					id = data['id'] if 'id' in data else 0
 					response = Common.json_error('jsonMissingFields', id)
-					self.player.send(response)
+					self.player.socket.send(response)
 			except ValueError: # Parsing failed
 				response = Common.json_error('jsonParseFailed', 0)
-				self.player.send(response)
+				self.player.socket.send(response)
 
 	def send(self, response):
 		if DEBUG_MODE:
 			Common.console_message('[SEND] to %s: %s' % (self.request.getpeername()[0], response))
 		self.wfile.write(json.dumps(response['header']) + '\n')
-		if response['object'] == [] or response['object']:
+		if response['object'] is not None:
 			self.wfile.write(json.dumps(response['object']) + '\n')
 
 	def get_next_message_id(self):
