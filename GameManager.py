@@ -20,7 +20,8 @@ class GameManager(threading.Thread):
 		Common.console_message('Game %d started!' % game.id)
 
 		while game.state == Model.Game.IN_PROGRESS:
-			round_time = 30
+			self.round_commands = {}
+			round_time = 300
 			for p in game.players:
 				object_to_send = {
 					'players': [pl.username for pl in game.players],
@@ -71,11 +72,13 @@ class GameManager(threading.Thread):
 			if c['type'] == 'move':
 				commands_temp['move'].append(c)
 		self.round_commands[player] = commands_temp
+		return True
 
 	def order_players(self):
 		"""
 		Put players in order (currently random)
 		"""
+		# TODO co jeśli gracz z listy poniżej jeszcze nie wysłał swoich ruchów
 		p = self.game.players
 		random.shuffle(p)
 		self.players_order = p
@@ -110,10 +113,7 @@ class GameManager(threading.Thread):
 		"""
 		results = []
 
-		for c in commands['deploy']:
-			r = self.game.execute(c['player'], c['command'])
-			results.append(r)
-		for c in commands['move']:
+		for c in commands:
 			r = self.game.execute(c['player'], c['command'])
 			results.append(r)
 
