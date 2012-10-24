@@ -1,9 +1,15 @@
 # -*- coding: utf-8 *-*
 from datetime import datetime
 
+LOG_FILE = None
+
+
 def console_message(msg):
 	now = datetime.today()
-	print('[' + now.strftime('%H:%M:%S') + '] ' + msg)
+	output = '[' + now.strftime('%H:%M:%S') + '] ' + msg
+	print(output)
+	if LOG_FILE:
+		LOG_FILE.write(output + '\n')
 
 def json_message(type, object, id):
 	return {'header': {'type': type, 'id': id}, 'object': object}

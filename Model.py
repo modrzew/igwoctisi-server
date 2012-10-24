@@ -38,7 +38,7 @@ class Game:
 		"""
 		from_id = command['sourceId']
 		to_id = command['targetId']
-		count = command['unitCount']
+		count = command['fleetCount']
 
 		# Checking the basics
 		if to_id not in self.map.planets: # Wrong id
