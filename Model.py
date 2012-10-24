@@ -1,5 +1,6 @@
 # -*- coding: utf-8 *-*
 from GameManager import GameManager
+import random
 
 players = []
 games = []
@@ -155,3 +156,10 @@ class Map:
 				'fleets': p['fleets']
 			})
 		return ret
+
+	def set_starting_positions(self):
+		planets_temp = self.starting_data
+		for p in self.game.players:
+			planet = random.choice(planets_temp)
+			self.planets[planet]['player'] = p
+			planets_temp.remove(planet)

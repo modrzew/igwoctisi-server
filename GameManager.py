@@ -17,6 +17,8 @@ class GameManager(threading.Thread):
 		self.round = 1
 		self.round_commands = {}
 
+		game.map.set_starting_positions()
+
 		Common.console_message('Game %d started!' % game.id)
 
 		while game.state == Model.Game.IN_PROGRESS:
