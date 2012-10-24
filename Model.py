@@ -92,8 +92,9 @@ class Game:
 			return ret
 
 class Map:
-	def __init__(self, map):
+	def __init__(self, game, map):
 		# TODO walidacja
+		self.game = game
 		# Map is a JSON object passed directly from client
 		self.raw_map = map
 
@@ -101,8 +102,8 @@ class Map:
 		# Planet - id: {name, base_units_per_turn}
 		self.planets = {}
 		for planet in map['planets']:
-			p = {'name': planet['name'], 'baseUnitsPerTurn': int(planet['id']), 'links': [], 'planetary_system': None,
-				 'player': None, 'fleets': 0}
+			p = {'name': planet['name'], 'id': int(planet['id']), 'baseUnitsPerTurn': int(planet['baseUnitsPerTurn']),
+				 'links': [], 'planetary_system': None, 'player': None, 'fleets': 0}
 			self.planets[planet['id']] = p
 		# Links
 		for link in map['links']:
@@ -144,3 +145,13 @@ class Map:
 		Fleet count on the source planet must be greater than count parameter (as 1 fleet must always stay behind).
 		"""
 		pass
+
+	def get_current_state(self):
+		ret = []
+		for (key, p) in self.planets.items():
+			ret.append({
+				'planetId': p['id'],
+				'playerIndex': self.game.players.index(p['player']) if p['player'] in self.game.players else -1,
+				'fleets': p['fleets']
+			})
+		return ret

@@ -22,10 +22,11 @@ class GameManager(threading.Thread):
 		while game.state == Model.Game.IN_PROGRESS:
 			self.round_commands = {}
 			round_time = 300
+			current_map = game.map.get_current_state()
 			for p in game.players:
 				object_to_send = {
 					'players': [pl.username for pl in game.players],
-					'map': [],
+					'map': current_map,
 					'tech': [],
 					'fleetsToDeploy': 6,
 					'roundTime': round_time

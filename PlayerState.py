@@ -44,7 +44,7 @@ class LoggedIn:
 			# TODO validation
 			g = Model.Game()
 			g.name = request['object']['name']
-			g.map = Model.Map(request['object']['map'])
+			g.map = Model.Map(g, request['object']['map'])
 			g.players.append(player)
 			g.hosting_player = player
 			Model.games.append(g)
