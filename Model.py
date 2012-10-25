@@ -163,3 +163,10 @@ class Map:
 			planet = random.choice(planets_temp)
 			self.planets[planet]['player'] = p
 			planets_temp.remove(planet)
+
+	def fleets_per_turn(self, player):
+		fleets = 0
+		for (key, p) in self.planets.items():
+			if p['player'] is player:
+				fleets += p['baseUnitsPerTurn']
+		return fleets

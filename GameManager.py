@@ -30,7 +30,7 @@ class GameManager(threading.Thread):
 					'players': [pl.username for pl in game.players],
 					'map': current_map,
 					'tech': [],
-					'fleetsToDeploy': 6,
+					'fleetsToDeploy': self.game.map.fleets_per_turn(p),
 					'roundTime': round_time
 				}
 				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
