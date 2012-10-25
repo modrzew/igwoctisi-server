@@ -32,10 +32,11 @@ class Game:
 		self.manager = GameManager(self)
 		last_game_id += 1
 
-	def valid(self, player, command):
+	def valid(self, player, command, is_precheck):
 		"""
 		Checks if command is valid for player.
 		command: type, sourceId, targetId, unitCount
+		is_precheck: checking only if commands are valid, to send "gameInvalidCommand" to player
 		"""
 		from_id = command['sourceId']
 		to_id = command['targetId']
@@ -53,10 +54,11 @@ class Game:
 			from_planet = self.map.planets[from_id]
 			if from_planet['player'] is not player: # Player doesn't own this planet
 				return False
-			if to_planet not in from_planet['links']: # Planets must be linked
+			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
-			if from_planet['fleets'] <= count: # At least one fleet must always stay behind
-				return False
+			if not is_precheck:
+				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
+					return False
 
 		# Deploy
 		if command['type'] == 'deploy': # Deploy
@@ -70,7 +72,7 @@ class Game:
 		return True
 
 	def execute(self, player, command):
-		if self.valid(player, command):
+		if self.valid(player, command, False):
 			ret = {'player': player.username, 'type': command['type']}
 			if command['type'] == 'deploy':
 				self.map.deploy(command['targetId'], command['fleetCount'])
@@ -80,15 +82,16 @@ class Game:
 				})
 
 			if command['type'] == 'move':
-				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
+				# TODO odkomentować to poniżej jak będzie podział na move/attack
+#				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
 					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
 					ret.update({
 						'sourceId': command['sourceId'],
 						'targetId': command['targetId'],
 						'fleetCount': command['fleetCount']
 					})
-				else: # Attack
-					pass
+#				else: # Attack
+#					pass
 
 			return ret
 
@@ -166,7 +169,12 @@ class Map:
 
 	def fleets_per_turn(self, player):
 		fleets = 0
+		player_planets = []
 		for (key, p) in self.planets.items():
 			if p['player'] is player:
 				fleets += p['baseUnitsPerTurn']
+				player_planets.append(key)
+		for (key, ps) in self.planetary_systems.items():
+			if set(ps['planets']).issubset(player_planets):
+				fleets += ps['fleetBonusPerTurn']
 		return fleets

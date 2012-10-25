@@ -63,7 +63,7 @@ class GameManager(threading.Thread):
 		# Check if everything can be executed
 		commands_temp = {'deploy': [], 'move': []}
 		for c in commands:
-			if not self.game.valid(player, c): # Invalid command
+			if not self.game.valid(player, c, True): # Invalid command
 				return False
 
 			c['sourceId'] = int(c['sourceId'])
