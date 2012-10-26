@@ -94,6 +94,8 @@ class Game:
 #					pass
 
 			return ret
+		else:
+			return None
 
 class Map:
 	def __init__(self, game, map):

@@ -118,6 +118,7 @@ class GameManager(threading.Thread):
 
 		for c in commands:
 			r = self.game.execute(c['player'], c['command'])
-			results.append(r)
+			if r is not None: # If None, move couldn't be executed
+				results.append(r)
 
 		return results
