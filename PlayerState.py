@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 import Model
 import Common
+import Database
 from datetime import datetime
 
 # Each class (state) must have request(player, request) method
@@ -19,10 +20,13 @@ class NotLoggedIn:
 		# Logging in
 		if request['type'] == 'login':
 			if 'username' in request['object'] and 'password' in request['object']:
-				player.username = request['object']['username']
-				player.state = LoggedIn()
-				Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
-				return Common.json_ok(request['id'])
+				if Database.login(request['object']['username'], request['object']['password']):
+					player.username = request['object']['username']
+					player.state = LoggedIn()
+					Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
+					return Common.json_ok(request['id'])
+				else:
+					return Common.json_error('loginFailed', request['id'])
 			else: # Some fields not found
 				return Common.json_error('invalidParameters', request['id'])
 		return Common.json_error('invalidCommand', request['id'])

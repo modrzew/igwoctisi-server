@@ -4,7 +4,6 @@ import Common
 import sys
 import time
 import os, os.path
-import Database
 
 
 if __name__ == "__main__":
