@@ -212,6 +212,16 @@ class InGame:
 				return Common.json_error('gameInvalidCommand', request['id'])
 			return Common.json_ok(request['id'])
 
+		# Chatting
+		if request['type'] == 'chat':
+			# TODO validation
+			msg = request['object']['message']
+			# Broadcast message to all users in game
+			t = datetime.today().strftime('%H:%M')
+			Common.console_message('In "%s" (#%d), %s chatted: %s' % (player.current_game.name, player.current_game.id, player.username, msg))
+			for p in player.current_game.players:
+				p.socket.send(Common.json_message('chat', {'username': player.username, 'message': msg, 'time': t}, p.socket.get_next_message_id()))
+			return None
 
 	def disconnect(self, player):
 		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
