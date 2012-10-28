@@ -18,13 +18,12 @@ class NotLoggedIn:
 	def request(self, player, request):
 		# Logging in
 		if request['type'] == 'login':
-			if 'username' in request['object'] and 'password' in request['object']:
-				player.username = request['object']['username']
-				player.state = LoggedIn()
-				Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
-				return Common.json_ok(request['id'])
-			else: # Some fields not found
+			if 'username' not in request['object'] or 'password' not in request['object']:
 				return Common.json_error('invalidParameters', request['id'])
+			player.username = request['object']['username']
+			player.state = LoggedIn()
+			Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
+			return Common.json_ok(request['id'])
 		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
@@ -41,10 +40,14 @@ class LoggedIn:
 
 		# Creating new game
 		if request['type'] == 'gameCreate':
-			# TODO validation
+			if 'name' not in request['object'] or 'map' not in request['object']:
+				return Common.json_error('invalidParameters', request['id'])
 			g = Model.Game()
+			map = Model.Map()
+			if not map.set(g, request['object']['map']):
+				return Common.json_error('gameCreateFailed', request['id'])
 			g.name = request['object']['name']
-			g.map = Model.Map(g, request['object']['map'])
+			g.map = map
 			g.players.append(player)
 			g.hosting_player = player
 			Model.games.append(g)
@@ -64,14 +67,14 @@ class LoggedIn:
 
 		# Joining a game
 		if request['type'] == 'gameJoin':
-			# TODO validation
+			if 'lobbyId' not in request['object']:
+				return Common.json_error('invalidParameters', request['id'])
 			game_list = [g for g in Model.games if g.id == request['object']['lobbyId'] and g.state == Model.Game.NOT_STARTED]
 			if not game_list: # Game not found
 				return Common.json_error('gameInvalidId', request['id'])
 			g = game_list[0]
-			# TODO error when game full
-			#if len(g.players) >= g.max_players: # Game full
-			#	return Common.json_error('game_full', request['id'])
+			if len(g.players) >= g.max_players: # Game full
+				return Common.json_error('gameFull', request['id'])
 			g.players.append(player)
 			player.current_game = g
 			player.state = InLobby()
@@ -110,7 +113,8 @@ class InLobby:
 	def request(self, player, request):
 		# Chatting
 		if request['type'] == 'chat':
-			# TODO validation
+			if 'message' not in request['object']:
+				return Common.json_error('invalidParameters', request['id'])
 			# Object is just a string with message
 			msg = request['object']['message']
 			# Broadcast message to all users in lobby
@@ -131,7 +135,8 @@ class InLobby:
 
 		# Kicking player out of the lobby
 		if request['type'] == 'gamePlayerKick':
-			# TODO validation
+			if 'username' not in request['object']:
+				return Common.json_error('invalidParameters', request['id'])
 			g = player.current_game
 			if g.hosting_player is not player: # Is kicking player the host?
 				return Common.json_error('gameKickFailed', request['id'])
@@ -168,6 +173,8 @@ class InLobby:
 			# Run Game thread
 			g.manager.start()
 			return None
+
+		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
 		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
@@ -214,7 +221,8 @@ class InGame:
 
 		# Chatting
 		if request['type'] == 'chat':
-			# TODO validation
+			if 'message' not in request['object']:
+				return Common.json_error('invalidParameters', request['id'])
 			msg = request['object']['message']
 			# Broadcast message to all users in game
 			t = datetime.today().strftime('%H:%M')
@@ -222,6 +230,8 @@ class InGame:
 			for p in player.current_game.players:
 				p.socket.send(Common.json_message('chat', {'username': player.username, 'message': msg, 'time': t}, p.socket.get_next_message_id()))
 			return None
+
+		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
 		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))

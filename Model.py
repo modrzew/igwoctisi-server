@@ -28,6 +28,7 @@ class Game:
 		self.state = Game.NOT_STARTED
 		self.name = ''
 		self.map = None
+		self.max_players = 0
 		self.hosting_player = None
 		self.manager = GameManager(self)
 		last_game_id += 1
@@ -98,18 +99,21 @@ class Game:
 			return None
 
 class Map:
-	def __init__(self, game, map):
-		# TODO walidacja
-		self.game = game
+	def set(self, game, map):
 		# Map is a JSON object passed directly from client
 		self.raw_map = map
+
+		if not self.valid(self.raw_map):
+			return False
+
+		self.game = game
 
 		self.name = map['name']
 		# Planet - id: {name, base_units_per_turn}
 		self.planets = {}
 		for planet in map['planets']:
 			p = {'name': planet['name'], 'id': int(planet['id']), 'baseUnitsPerTurn': int(planet['baseUnitsPerTurn']),
-				 'links': [], 'planetary_system': None, 'player': None, 'fleets': 0}
+				 'links': [], 'planetary_system': None, 'player': None, 'fleets': int(planet['baseUnitsPerTurn'])}
 			self.planets[planet['id']] = p
 		# Links
 		for link in map['links']:
@@ -125,6 +129,20 @@ class Map:
 				self.planets[planet_id]['planetary_system'] = ps['id']
 		# Starting data: [planetId]
 		self.starting_data = [sd['planetId'] for sd in map['playerStartingData']]
+		self.game.max_players = len(self.starting_data)
+
+		return True
+
+	def valid(self, raw_map):
+		if 'planets' not in raw_map:
+			return False
+		if 'links' not in raw_map:
+			return False
+		if 'planetarySystems' not in raw_map:
+			return False
+		if 'playerStartingData' not in raw_map:
+			return False
+		return True
 
 	def deploy(self, planet_id, count):
 		"""
@@ -167,6 +185,7 @@ class Map:
 		for p in self.game.players:
 			planet = random.choice(planets_temp)
 			self.planets[planet]['player'] = p
+			self.planets[planet]['fleets'] = 0
 			planets_temp.remove(planet)
 
 	def fleets_per_turn(self, player):

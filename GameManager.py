@@ -23,7 +23,7 @@ class GameManager(threading.Thread):
 
 		while game.state == Model.Game.IN_PROGRESS:
 			self.round_commands = {}
-			round_time = 300
+			round_time = 30
 			current_map = game.map.get_current_state()
 			for p in game.players:
 				object_to_send = {
@@ -35,24 +35,22 @@ class GameManager(threading.Thread):
 				}
 				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
 				p.socket.send(Common.json_message('roundStart', object_to_send, p.socket.get_next_message_id()))
-			while round_time > 0 and game.state == Model.Game.IN_PROGRESS:
-				#Common.console_message('Game %d, round %d: %d seconds left' % (game.id, self.round, round_time))
+			round_start_time = time.time()
+			while time.time() - round_start_time < round_time and game.state == Model.Game.IN_PROGRESS:
 				if len(self.round_commands) == len(game.players): # Everyone sent their orders
 					break
-				round_time -= 1
-				time.sleep(1)
+				time.sleep(0.5)
 			# Assume that round has ended and we have everyone's orders
-
 			# Zero, randomize the players!
 			self.order_players()
 			# First, we put them in order: deploys first, moves next
 			commands = self.order_commands()
 			# And now let's execute them, shall we?
 			results = self.execute_commands(commands)
+			# TODO wygrywanie gry
 			# Then send the results to all players
 			for p in self.game.players:
 				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
-
 			# To the next round!
 			self.round += 1
 
@@ -81,7 +79,6 @@ class GameManager(threading.Thread):
 		"""
 		Put players in order (currently random)
 		"""
-		# TODO co jeśli gracz z listy poniżej jeszcze nie wysłał swoich ruchów
 		p = self.game.players
 		random.shuffle(p)
 		self.players_order = p
@@ -97,7 +94,7 @@ class GameManager(threading.Thread):
 		while not move_while_break:
 			move_while_break = True # Assume that there are no orders left
 			for p in self.players_order:
-				if self.round_commands[p]['deploy']:
+				if p in self.round_commands and self.round_commands[p]['deploy']:
 					move_while_break = False # Oh, so there are some orders
 					commands.append({'player': p, 'command': self.round_commands[p]['deploy'].pop()})
 		# Move/attack
@@ -105,7 +102,7 @@ class GameManager(threading.Thread):
 		while not move_while_break:
 			move_while_break = True # Assume that there are no orders left
 			for p in self.players_order:
-				if self.round_commands[p]['move']:
+				if p in self.round_commands and self.round_commands[p]['move']:
 					move_while_break = False # Oh, so there are some orders
 					commands.append({'player': p, 'command': self.round_commands[p]['move'].pop()})
 		return commands
