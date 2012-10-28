@@ -7,27 +7,30 @@ import os, os.path
 
 
 if __name__ == "__main__":
-	Communication.DEBUG_MODE = False
-	# Define the server address
-	if len(sys.argv) >= 3:
-		HOST, PORT = str(sys.argv[1]), int(sys.argv[2])
-		if len(sys.argv) == 4:
-			Communication.DEBUG_MODE = (sys.argv[3] == 'debug')
-	else:
-		HOST, PORT = "localhost", 23456
-
-	# Turn on logging if debug mode
-	if Communication.DEBUG_MODE:
-		filename = 'logs/%d.txt' % time.time()
-		Common.console_message('Saving log to %s' % filename)
-		if not os.path.exists('logs'):
-			os.mkdir('logs')
-		Common.LOG_FILE = open(filename, 'w')
+	# Define the default server address
+	HOST, PORT = "localhost", 23456
+	# Get the command line parameters
+	for i, a in enumerate(sys.argv):
+		if i > 0: # First entry is filename
+			if a[0:2] == '--':
+				if a == '--debug':
+					Communication.DEBUG_MODE = True
+				if a == '--logging': # Turn on logging
+					filename = 'logs/%d.txt' % time.time()
+					Common.console_message('Saving log to %s' % filename)
+					if not os.path.exists('logs'):
+						os.mkdir('logs')
+					Common.LOG_FILE = open(filename, 'w')
+			else:
+				if i == len(sys.argv) - 2: # Host
+					HOST = str(a)
+				if i == len(sys.argv) - 1:
+					PORT = int(a)
 
 	# Create server object
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
 	ip, port = server.server_address
-	Common.console_message('Server started!')
+	Common.console_message('Server started on %s at %d!' % (HOST, PORT))
 	if Communication.DEBUG_MODE:
 		Common.console_message('Debug mode is ON')
 

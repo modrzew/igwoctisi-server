@@ -1,1 +1,1 @@
-python Server.py localhost 23456 debug
+python Server.py --debug --logging

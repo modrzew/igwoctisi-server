@@ -1,1 +1,1 @@
-python Server.py localhost 23456
+python Server.py
