@@ -1,5 +1,6 @@
 # -*- coding: utf-8 *-*
 from GameManager import GameManager
+import Common
 import random
 
 players = []
@@ -83,16 +84,21 @@ class Game:
 				})
 
 			if command['type'] == 'move':
-				# TODO odkomentować to poniżej jak będzie podział na move/attack
-#				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
+				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
 					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
 					ret.update({
 						'sourceId': command['sourceId'],
 						'targetId': command['targetId'],
 						'fleetCount': command['fleetCount']
 					})
-#				else: # Attack
-#					pass
+				else: # Attack
+					result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
+					ret.update({
+						'sourceId': command['sourceId'],
+						'targetId': command['targetId'],
+						'fleetCount': command['fleetCount'],
+					})
+					ret.update(result)
 
 			return ret
 		else:
@@ -168,7 +174,64 @@ class Map:
 		Planets must belong to the same player, and there must be a link between them.
 		Fleet count on the source planet must be greater than count parameter (as 1 fleet must always stay behind).
 		"""
-		pass
+
+		ret = {}
+
+		# Chances to destroy one fleet
+		atk_chance = 0.6
+		def_chance = 0.7
+
+		atk_fleets = count
+		def_fleets = self.planets[to_id]['fleets']
+
+		# "Ideal" battle without luck factor
+		atk_destroyed_ideal = atk_chance * atk_fleets
+		def_destroyed_ideal = def_chance * def_fleets
+		# "Real" battle with luck factor
+		atk_destroyed_real = 0
+		for i in range(atk_fleets):
+			rnd = random.random()
+			if rnd <= atk_chance:
+				atk_destroyed_real += 1
+		def_destroyed_real = 0
+		for i in range(def_fleets):
+			rnd = random.random()
+			if rnd <= def_chance:
+				def_destroyed_real += 1
+		# Average + weightening
+		atk_destroyed = Common.weighted_round((atk_destroyed_real + atk_destroyed_ideal) / 2)
+		def_destroyed = Common.weighted_round((def_destroyed_real + def_destroyed_ideal) / 2)
+
+		atk_won = atk_fleets > def_destroyed and def_fleets < atk_destroyed
+		if atk_won: # Attacker won!
+			ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
+			self.planets[from_id]['fleets'] -= atk_fleets
+			ret['targetLeft'] = atk_fleets - def_destroyed
+			self.planets[to_id]['fleets'] = atk_fleets - def_destroyed
+			ret['attackerLosses'] = def_destroyed
+			ret['defenderLosses'] = def_fleets
+			ret['targetOwnerChanged'] = True
+			# TODO informacja o właścicielu planety
+			ret['targetOwner'] = None
+#			self.planets[to_id]['player'] = None
+		else: # Defender won!
+			ret['targetOwnerChanged'] = False
+			if atk_fleets <= def_destroyed and def_fleets >= atk_destroyed: # Both sides left with 0
+				ret['attackerLosses'] = atk_fleets
+				ret['defenderLosses'] = def_fleets - 1
+				ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
+				ret['targetLeft'] = 1
+				self.planets[from_id]['fleets'] -= atk_fleets
+				self.planets[to_id]['fleets'] = 1
+			else:
+				ret['attackerLosses'] = def_destroyed if atk_fleets > def_destroyed else atk_fleets
+				ret['defenderLosses'] = atk_destroyed if def_fleets > atk_destroyed else def_fleets
+				ret['sourceLeft'] = self.planets[from_id]['fleets'] - def_destroyed
+				ret['targetLeft'] = self.planets[to_id]['fleets'] - atk_destroyed
+				self.planets[from_id]['fleets'] -= def_destroyed
+				self.planets[to_id]['fleets'] -= atk_destroyed
+
+		return ret
 
 	def get_current_state(self):
 		ret = []
