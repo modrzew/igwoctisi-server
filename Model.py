@@ -49,12 +49,29 @@ class Game:
 			return False
 		to_planet = self.map.planets[to_id]
 
-		# Move/Attack
+		# Move
 		if command['type'] == 'move':
 			if from_id not in self.map.planets: # Wrong id
 				return False
 			from_planet = self.map.planets[from_id]
 			if from_planet['player'] is not player: # Player doesn't own this planet
+				return False
+			if to_planet['player'] is not player: # Player doesn't own that planet
+				return False
+			if to_planet['id'] not in from_planet['links']: # Planets must be linked
+				return False
+			if not is_precheck:
+				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
+					return False
+
+		# Attack
+		if command['type'] == 'attack':
+			if from_id not in self.map.planets: # Wrong id
+				return False
+			from_planet = self.map.planets[from_id]
+			if from_planet['player'] is not player: # Player doesn't own this planet
+				return False
+			if to_planet['player'] is player: # Player does own that planet
 				return False
 			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
@@ -64,7 +81,7 @@ class Game:
 
 		# Deploy
 		if command['type'] == 'deploy': # Deploy
-			if to_planet['player'] is not player: # Player doesn't own this planet
+			if to_planet['player'] is not player: # Player doesn't own that planet
 				return False
 
 		# Tech
@@ -84,21 +101,21 @@ class Game:
 				})
 
 			if command['type'] == 'move':
-				if self.map.planets[command['sourceId']].player is self.map.planets[command['targetId']].player: # Move
-					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
-					ret.update({
-						'sourceId': command['sourceId'],
-						'targetId': command['targetId'],
-						'fleetCount': command['fleetCount']
-					})
-				else: # Attack
-					result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
-					ret.update({
-						'sourceId': command['sourceId'],
-						'targetId': command['targetId'],
-						'fleetCount': command['fleetCount'],
-					})
-					ret.update(result)
+				self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
+				ret.update({
+					'sourceId': command['sourceId'],
+					'targetId': command['targetId'],
+					'fleetCount': command['fleetCount']
+				})
+
+			if command['type'] == 'attack': # Attack
+				result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
+				ret.update({
+					'sourceId': command['sourceId'],
+					'targetId': command['targetId'],
+					'fleetCount': command['fleetCount'],
+				})
+				ret.update(result)
 
 			return ret
 		else:

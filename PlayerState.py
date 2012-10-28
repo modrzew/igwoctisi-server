@@ -215,7 +215,7 @@ class InGame:
 		if request['type'] == 'ready':
 			gm = player.current_game.manager
 			if player in gm.round_ready:
-				error_code = ['fuckYou', 'WOT', 'WAT.']
+				error_code = ['fuckYou', 'WOT', '(o,o) WAT.']
 				return Common.json_error(random.choice(error_code), request['id'])
 			gm.round_ready.append(player)
 			return Common.json_ok(request['id'])

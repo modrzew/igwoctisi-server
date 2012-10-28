@@ -15,6 +15,8 @@ class GameManager(threading.Thread):
 		game = self.game
 		game.state = Model.Game.IN_PROGRESS
 		self.round = 1
+		self.round_commands = {}
+		self.round_ready = []
 
 		game.map.set_starting_positions()
 
@@ -22,11 +24,12 @@ class GameManager(threading.Thread):
 
 		while game.state == Model.Game.IN_PROGRESS:
 			self.round_ready = []
-			# We wait for players
+			# We wait for players to be ready
 			while game.state == Model.Game.IN_PROGRESS:
-				if set(game.players).issubset(self.round_ready): # Everyone sent their orders
+				if set(game.players).issubset(self.round_ready): # Everyone is ready!
 					break
 				time.sleep(0.5)
+
 			self.round_commands = {}
 			round_time = 300
 			current_map = game.map.get_current_state()
@@ -74,7 +77,7 @@ class GameManager(threading.Thread):
 
 			if c['type'] == 'deploy':
 				commands_temp['deploy'].append(c)
-			if c['type'] == 'move':
+			if c['type'] == 'move' or c['type'] == 'attack':
 				commands_temp['move'].append(c)
 		self.round_commands[player] = commands_temp
 		return True
