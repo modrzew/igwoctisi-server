@@ -15,15 +15,20 @@ class GameManager(threading.Thread):
 		game = self.game
 		game.state = Model.Game.IN_PROGRESS
 		self.round = 1
-		self.round_commands = {}
 
 		game.map.set_starting_positions()
 
 		Common.console_message('Game %d started!' % game.id)
 
 		while game.state == Model.Game.IN_PROGRESS:
+			self.round_ready = []
+			# We wait for players
+			while game.state == Model.Game.IN_PROGRESS:
+				if set(game.players).issubset(self.round_ready): # Everyone sent their orders
+					break
+				time.sleep(0.5)
 			self.round_commands = {}
-			round_time = 30
+			round_time = 300
 			current_map = game.map.get_current_state()
 			for p in game.players:
 				object_to_send = {
@@ -33,11 +38,10 @@ class GameManager(threading.Thread):
 					'fleetsToDeploy': self.game.map.fleets_per_turn(p),
 					'roundTime': round_time
 				}
-				# TODO stos rzeczy do wysłania i oczekiwanie na odpowiedź
 				p.socket.send(Common.json_message('roundStart', object_to_send, p.socket.get_next_message_id()))
 			round_start_time = time.time()
 			while time.time() - round_start_time < round_time and game.state == Model.Game.IN_PROGRESS:
-				if len(self.round_commands) == len(game.players): # Everyone sent their orders
+				if set(game.players).issubset(self.round_commands.keys()): # Everyone sent their orders
 					break
 				time.sleep(0.5)
 			# Assume that round has ended and we have everyone's orders

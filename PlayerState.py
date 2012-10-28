@@ -2,6 +2,7 @@
 import Model
 import Common
 from datetime import datetime
+import random
 
 # Each class (state) must have request(player, request) method
 # We expect request to be already validated as JSON object containing type, object and id fields
@@ -209,6 +210,15 @@ class InGame:
 			self.player_leave(player)
 			player.state = LoggedIn()
 			return None
+
+		# Signaling "I am ready!"
+		if request['type'] == 'ready':
+			gm = player.current_game.manager
+			if player in gm.round_ready:
+				error_code = ['fuckYou', 'WOT', 'WAT.']
+				return Common.json_error(random.choice(error_code), request['id'])
+			gm.round_ready.append(player)
+			return Common.json_ok(request['id'])
 
 		# Sending moves list
 		if request['type'] == 'commands':
