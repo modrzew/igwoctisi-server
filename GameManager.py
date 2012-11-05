@@ -10,6 +10,9 @@ class GameManager(threading.Thread):
 	def __init__(self, game):
 		super(GameManager, self).__init__()
 		self.game = game
+		self.round = 1
+		self.round_commands = {}
+		self.round_ready = []
 
 	def run(self):
 		game = self.game

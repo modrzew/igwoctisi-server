@@ -219,7 +219,7 @@ class Map:
 		atk_destroyed = Common.weighted_round((atk_destroyed_real + atk_destroyed_ideal) / 2)
 		def_destroyed = Common.weighted_round((def_destroyed_real + def_destroyed_ideal) / 2)
 
-		atk_won = atk_fleets > def_destroyed and def_fleets < atk_destroyed
+		atk_won = atk_fleets > def_destroyed and def_fleets <= atk_destroyed
 		if atk_won: # Attacker won!
 			ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
 			self.planets[from_id]['fleets'] -= atk_fleets
@@ -228,12 +228,11 @@ class Map:
 			ret['attackerLosses'] = def_destroyed
 			ret['defenderLosses'] = def_fleets
 			ret['targetOwnerChanged'] = True
-			# TODO informacja o właścicielu planety
-			ret['targetOwner'] = None
-#			self.planets[to_id]['player'] = None
+			ret['targetOwner'] = self.planets[from_id]['player'].username
+			self.planets[to_id]['player'] = self.planets[from_id]['player']
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
-			if atk_fleets <= def_destroyed and def_fleets >= atk_destroyed: # Both sides left with 0
+			if atk_fleets <= def_destroyed and def_fleets <= atk_destroyed: # Both sides left with 0
 				ret['attackerLosses'] = atk_fleets
 				ret['defenderLosses'] = def_fleets - 1
 				ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
@@ -277,5 +276,5 @@ class Map:
 				player_planets.append(key)
 		for (key, ps) in self.planetary_systems.items():
 			if set(ps['planets']).issubset(player_planets):
-				fleets += ps['fleetBonusPerTurn']
+				fleets += ps['fleet_bonus']
 		return fleets
