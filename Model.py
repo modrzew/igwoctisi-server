@@ -228,8 +228,8 @@ class Map:
 			if rnd <= def_chance:
 				def_destroyed_real += 1
 		# Average + weightening
-		atk_destroyed = Common.weighted_round((atk_destroyed_real + atk_destroyed_ideal) / 2)
-		def_destroyed = Common.weighted_round((def_destroyed_real + def_destroyed_ideal) / 2)
+		atk_destroyed = Common.weighted_round((atk_destroyed_real + atk_destroyed_ideal) / 2.0)
+		def_destroyed = Common.weighted_round((def_destroyed_real + def_destroyed_ideal) / 2.0)
 
 		atk_won = atk_fleets > def_destroyed and def_fleets <= atk_destroyed
 		if atk_won: # Attacker won!
