@@ -71,8 +71,6 @@ class Game:
 			from_planet = self.map.planets[from_id]
 			if from_planet['player'] is not player: # Player doesn't own this planet
 				return False
-			if to_planet['player'] is not player: # Player doesn't own that planet
-				return False
 			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
 			if not is_precheck:
@@ -85,8 +83,6 @@ class Game:
 				return False
 			from_planet = self.map.planets[from_id]
 			if from_planet['player'] is not player: # Player doesn't own this planet
-				return False
-			if to_planet['player'] is player: # Player does own that planet
 				return False
 			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
@@ -121,22 +117,32 @@ class Game:
 					'fleetCount': command['fleetCount']
 				})
 
-			if command['type'] == 'move':
-				self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
-				ret.update({
-					'sourceId': command['sourceId'],
-					'targetId': command['targetId'],
-					'fleetCount': command['fleetCount']
-				})
+			# Maybe, in the course of time, target planed changed its owner
+			# So it may no longer be an attack, but just a move
+			if command['type'] == 'move' or command['type'] == 'attack':
+				if self.map.planets[command['sourceId']]['player'] is self.map.planets[command['targetId']]['player']:
+					updated_command_type = 'move'
+				else:
+					updated_command_type = 'attack'
 
-			if command['type'] == 'attack': # Attack
-				result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
-				ret.update({
-					'sourceId': command['sourceId'],
-					'targetId': command['targetId'],
-					'fleetCount': command['fleetCount'],
-				})
-				ret.update(result)
+				if updated_command_type == 'move':
+					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
+					ret.update({
+						'sourceId': command['sourceId'],
+						'targetId': command['targetId'],
+						'fleetCount': command['fleetCount'],
+						'type': 'move'
+					})
+
+				if updated_command_type == 'attack': # Attack
+					result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
+					ret.update({
+						'sourceId': command['sourceId'],
+						'targetId': command['targetId'],
+						'fleetCount': command['fleetCount'],
+						'type': 'attack'
+					})
+					ret.update(result)
 
 			if command['type'] == 'tech': # Tech
 				self.tech[player][command['techType']] += 1
