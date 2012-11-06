@@ -2,6 +2,7 @@
 from GameManager import GameManager
 import Common
 import random
+import math
 
 players = []
 games = []
@@ -333,5 +334,8 @@ class Map:
 		for (key, ps) in self.planetary_systems.items():
 			if set(ps['planets']).issubset(player_planets):
 				fleets += ps['fleet_bonus']
-				self.game.add_tech_points(player, sum([p['baseUnitsPerTurn'] for p in ps['planets']]) / 5)
+				tech_points = 0
+				for index in ps['planets']:
+					tech_points += self.planets[index]['baseUnitsPerTurn']
+				self.game.add_tech_points(player, int(math.ceil(tech_points / 5.0)))
 		return fleets
