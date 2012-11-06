@@ -188,6 +188,7 @@ class InGame:
 	def player_leave(self, player):
 		g = player.current_game
 		g.players.remove(player)
+		del g.tech[player]
 		if g.players: # Are there any players left?
 			for (k, p) in g.map.planets.items():
 				if p['player'] is player:

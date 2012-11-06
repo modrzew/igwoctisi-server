@@ -29,6 +29,7 @@ class Game:
 		self.state = Game.NOT_STARTED
 		self.name = ''
 		self.map = None
+		self.tech = {}
 		self.max_players = 0
 		self.hosting_player = None
 		self.manager = GameManager(self)
@@ -86,7 +87,13 @@ class Game:
 
 		# Tech
 		if command['type'] == 'tech': # Tech
-			return False
+			if 'techType' not in command:
+				return False
+			if 'techType' != 'offensive' and'techType' != 'defensive' and'techType' != 'economic':
+				return False
+			if not is_precheck:
+				pass
+				# TODO sprawdzanie, czy jest odpowiednia liczba punktow na zakup technologii
 
 		return True
 
@@ -116,6 +123,11 @@ class Game:
 					'fleetCount': command['fleetCount'],
 				})
 				ret.update(result)
+
+			if command['type'] == 'tech': # Tech
+				self.tech[player][command['techType']] += 1
+				# TODO odejmowanie punktów za technologię
+				return None # We return nothing, so nobody can see what others upgraded
 
 			return ret
 		else:

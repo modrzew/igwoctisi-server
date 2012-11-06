@@ -21,6 +21,15 @@ class GameManager(threading.Thread):
 		self.round_commands = {}
 		self.round_ready = []
 
+		# Set 0 level tech for everyone
+		for p in self.game.players:
+			game.tech[p] = {
+				'offensive': 0,
+				'defensive': 0,
+				'economic': 0,
+				'points': 0
+			}
+
 		game.map.set_starting_positions()
 
 		Common.console_message('Game %d started!' % game.id)
@@ -40,6 +49,8 @@ class GameManager(threading.Thread):
 				object_to_send = {
 					'players': [pl.username for pl in game.players],
 					'map': current_map,
+					# TODO odkomentować gdy klient nie będzie rzucał wyjątkiem
+#					'tech': game.tech[p],
 					'tech': [],
 					'fleetsToDeploy': self.game.map.fleets_per_turn(p),
 					'roundTime': round_time
@@ -69,7 +80,7 @@ class GameManager(threading.Thread):
 		Set round commands for a player
 		"""
 		# Check if everything can be executed
-		commands_temp = {'deploy': [], 'move': []}
+		commands_temp = {'tech': [], 'deploy': [], 'move': []}
 		for c in commands:
 			if not self.game.valid(player, c, True): # Invalid command
 				return False
@@ -82,6 +93,9 @@ class GameManager(threading.Thread):
 				commands_temp['deploy'].append(c)
 			if c['type'] == 'move' or c['type'] == 'attack':
 				commands_temp['move'].append(c)
+			if c['type'] == 'tech':
+				if not c['techType'] in [com['techType'] for com in commands_temp['tech']]: # Only 1 upgrade per turn
+					commands_temp['tech'].append(c)
 		self.round_commands[player] = commands_temp
 		return True
 
@@ -99,6 +113,14 @@ class GameManager(threading.Thread):
 		As in: 1st command for P1, 1st command for P2 (...) 2nd command for P1, 2nd command for P2 and so on
 		"""
 		commands = []
+		# Tech
+		move_while_break = False
+		while not move_while_break:
+			move_while_break = True # Assume that there are no orders left
+			for p in self.players_order:
+				if p in self.round_commands and self.round_commands[p]['tech']:
+					move_while_break = False # Oh, so there are some orders
+					commands.append({'player': p, 'command': self.round_commands[p]['tech'].pop()})
 		# Deploy
 		move_while_break = False
 		while not move_while_break:
@@ -125,7 +147,7 @@ class GameManager(threading.Thread):
 
 		for c in commands:
 			r = self.game.execute(c['player'], c['command'])
-			if r is not None: # If None, move couldn't be executed
+			if r is not None: # If None, move couldn't be executed (or it was tech)
 				results.append(r)
 
 		return results
