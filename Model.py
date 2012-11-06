@@ -241,6 +241,9 @@ class Map:
 			ret['defenderLosses'] = def_fleets
 			ret['targetOwnerChanged'] = True
 			ret['targetOwner'] = self.planets[from_id]['player'].username
+			# Should we give a player some tech points?
+			if self.planets[to_id]['player'] is None:
+				self.game.tech[self.planets[from_id]['player']]['points'] += self.planets[to_id]['baseUnitsPerTurn'] * 3
 			self.planets[to_id]['player'] = self.planets[from_id]['player']
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
@@ -289,4 +292,5 @@ class Map:
 		for (key, ps) in self.planetary_systems.items():
 			if set(ps['planets']).issubset(player_planets):
 				fleets += ps['fleet_bonus']
+				self.game.tech[player]['points'] += int(sum([p['baseUnitsPerTurn'] for p in ps['planets']]) / 5)
 		return fleets
