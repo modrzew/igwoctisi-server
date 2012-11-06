@@ -4,6 +4,7 @@ import Model
 import threading
 import time
 import random
+from datetime import datetime
 
 
 class GameManager(threading.Thread):
@@ -13,6 +14,7 @@ class GameManager(threading.Thread):
 		self.round = 1
 		self.round_commands = {}
 		self.round_ready = []
+		self.game_start_time = time.time()
 
 	def run(self):
 		game = self.game
@@ -41,6 +43,8 @@ class GameManager(threading.Thread):
 			self.round_ready = []
 			# We wait for players to be ready
 			while game.state == Model.Game.IN_PROGRESS:
+				if self.has_game_ended(): # Has the game ended?
+					self.game_end()
 				if set(game.players).issubset(self.round_ready): # Everyone is ready!
 					break
 				time.sleep(0.5)
@@ -61,6 +65,8 @@ class GameManager(threading.Thread):
 				p.socket.send(Common.json_message('roundStart', object_to_send, p.socket.get_next_message_id()))
 			round_start_time = time.time()
 			while time.time() - round_start_time < round_time and game.state == Model.Game.IN_PROGRESS:
+				if self.has_game_ended(): # Has the game ended?
+					self.game_end()
 				if set(game.players).issubset(self.round_commands.keys()): # Everyone sent their orders
 					break
 				time.sleep(0.5)
@@ -154,3 +160,48 @@ class GameManager(threading.Thread):
 				results.append(r)
 
 		return results
+
+	def game_end(self):
+		self.game.state = Model.Game.FINISHED
+		for p in self.game.players:
+			message = self.game_end_message()
+			message['endType'] = 'gameEnd'
+			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
+
+	def game_end_message(self):
+		places = [p.username for p in self.game.players_lost]
+		places.reverse()
+		ret = {
+			'places': places,
+			'rounds': self.round,
+			'time': int(time.time() - self.game_start_time),
+			'stats': self.game.stats
+		}
+		return ret
+
+	def has_game_ended(self):
+		# No players left
+		if self.game.players is []:
+			return True
+
+		return False
+
+	def player_lost(self, player, send_game_end):
+		player.current_game = None
+		self.game.players.remove(player)
+		self.game.players_lost.append(player)
+		del self.game.tech[player]
+		if self.has_game_ended():
+			self.game_end()
+		else:
+			for (k, p) in self.game.map.planets.items():
+				if p['player'] is player:
+					p['player'] = None
+			# Notify players in game about their loss
+			t = datetime.today().strftime('%H:%M')
+			for p in self.game.players:
+				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
+		if send_game_end:
+			message = self.game_end_message()
+			message['endType'] = 'loss'
+			player.socket.send(Common.json_message('gameEnd', message, player.socket.get_next_message_id()))

@@ -25,6 +25,7 @@ class Game:
 	def __init__(self):
 		global last_game_id
 		self.players = []
+		self.players_lost = []
 		self.id = last_game_id
 		self.state = Game.NOT_STARTED
 		self.name = ''
@@ -207,7 +208,7 @@ class Map:
 		planetId must correspond to planet ID in self.planets.
 		"""
 		self.planets[planet_id]['fleets'] += count
-		self.update_stat(self.planets[planet_id]['player'], 'fleetsDeployed', count)
+		self.game.update_stat(self.planets[planet_id]['player'], 'fleetsDeployed', count)
 
 	def move(self, from_id, to_id, count):
 		"""
@@ -218,7 +219,7 @@ class Map:
 		"""
 		self.planets[from_id]['fleets'] -= count
 		self.planets[to_id]['fleets'] += count
-		self.update_stat(self.planets[from_id]['player'], 'moveCount', 1)
+		self.game.update_stat(self.planets[from_id]['player'], 'moveCount', 1)
 
 	def attack(self, from_id, to_id, count):
 		"""
@@ -271,12 +272,12 @@ class Map:
 			ret['defenderLosses'] = def_fleets
 			ret['targetOwnerChanged'] = True
 			ret['targetOwner'] = attacker.username
-			self.update_stat(attacker, 'planetsConquered', 1)
+			self.game.update_stat(attacker, 'planetsConquered', 1)
 			# Should we give attacker some tech points?
 			if defender is None: # Planet is owned by nobody
 				self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * 3)
 			else: # Planet is owned by somebody, so they have lost it!
-				self.update_stat(defender, 'planetsLost', 1)
+				self.game.update_stat(defender, 'planetsLost', 1)
 			to_planet['player'] = attacker
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
@@ -295,12 +296,12 @@ class Map:
 				from_planet['fleets'] -= def_destroyed
 				to_planet['fleets'] -= atk_destroyed
 
-		self.update_stat(attacker, 'moveCount', 1)
-		self.update_stat(attacker, 'fleetsDestroyed', ret['defenderLosses'])
-		self.update_stat(attacker, 'fleetsLost', ret['attackerLosses'])
+		self.game.update_stat(attacker, 'moveCount', 1)
+		self.game.update_stat(attacker, 'fleetsDestroyed', ret['defenderLosses'])
+		self.game.update_stat(attacker, 'fleetsLost', ret['attackerLosses'])
 		if defender is not None:
-			self.update_stat(defender, 'fleetsDestroyed', ret['attackerLosses'])
-			self.update_stat(defender, 'fleetsLost', ret['defenderLosses'])
+			self.game.update_stat(defender, 'fleetsDestroyed', ret['attackerLosses'])
+			self.game.update_stat(defender, 'fleetsLost', ret['defenderLosses'])
 
 		return ret
 

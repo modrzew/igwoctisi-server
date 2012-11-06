@@ -110,6 +110,7 @@ class InLobby:
 			for p in g.players:
 				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
 			player.current_game = None
+		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
 
 	def request(self, player, request):
 		# Chatting
@@ -178,37 +179,16 @@ class InLobby:
 		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
-		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
 		self.player_leave(player)
 		player.state = Disconnected()
 
 
 class InGame:
-	# What to do when one player leaves/disconnects
-	def player_leave(self, player):
-		g = player.current_game
-		g.players.remove(player)
-		del g.tech[player]
-		if g.players: # Are there any players left?
-			for (k, p) in g.map.planets.items():
-				if p['player'] is player:
-					p['player'] = None
-			# Notify players in game about their loss
-			t = datetime.today().strftime('%H:%M')
-			for p in g.players:
-				p.socket.send(Common.json_message('gamePlayerLeft', {'username': p.username, 'time': t}, p.socket.get_next_message_id()))
-		else: # Nobody left, remove the game!
-			g.state = Model.Game.FINISHED
-			Model.games.remove(g)
-			del g
-		player.current_game = None
-
-
 	def request(self, player, request):
 		# Leaving the game
 		if request['type'] == 'gameLeave':
 			Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
-			self.player_leave(player)
+			g = player.current_game.manager.player_lost(player, True)
 			player.state = LoggedIn()
 			return None
 
@@ -245,6 +225,5 @@ class InGame:
 		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
-		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
-		self.player_leave(player)
+		g = player.current_game.manager.player_lost(player, False)
 		player.state = Disconnected()
