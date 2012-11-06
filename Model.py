@@ -30,6 +30,18 @@ class Game:
 		self.name = ''
 		self.map = None
 		self.tech = {}
+		self.stats = {
+			'techGained': {},
+			'techSpent': {},
+			'planetsConquered': {},
+			'planetsLost': {},
+			'systemsConquered': {},
+			'systemsLost': {},
+			'fleetsDeployed': {},
+			'fleetsDestroyed': {},
+			'fleetsLost': {},
+			'moveCount': {}
+		}
 		self.max_players = 0
 		self.hosting_player = None
 		self.manager = GameManager(self)
@@ -133,6 +145,16 @@ class Game:
 		else:
 			return None
 
+	def add_tech_points(self, player, points):
+		self.tech[player]['points'] += int(points)
+		if points > 0:
+			self.update_stat(player, 'techGained', points)
+		elif points < 0:
+			self.update_stat(player, 'techLost', points)
+
+	def update_stat(self, player, name, value):
+		self.stats[name][player.username] += value
+
 class Map:
 	def set(self, game, map):
 		# Map is a JSON object passed directly from client
@@ -185,6 +207,7 @@ class Map:
 		planetId must correspond to planet ID in self.planets.
 		"""
 		self.planets[planet_id]['fleets'] += count
+		self.update_stat(self.planets[planet_id]['player'], 'fleetsDeployed', count)
 
 	def move(self, from_id, to_id, count):
 		"""
@@ -195,6 +218,7 @@ class Map:
 		"""
 		self.planets[from_id]['fleets'] -= count
 		self.planets[to_id]['fleets'] += count
+		self.update_stat(self.planets[from_id]['player'], 'moveCount', 1)
 
 	def attack(self, from_id, to_id, count):
 		"""
@@ -210,8 +234,14 @@ class Map:
 		atk_chance = 0.6
 		def_chance = 0.7
 
+		from_planet = self.planets[from_id]
+		to_planet = self.planets[to_id]
+
 		atk_fleets = count
-		def_fleets = self.planets[to_id]['fleets']
+		def_fleets = to_planet['fleets']
+
+		attacker = from_planet['player']
+		defender = to_planet['player']
 
 		# "Ideal" battle without luck factor
 		atk_destroyed_ideal = atk_chance * atk_fleets
@@ -233,34 +263,44 @@ class Map:
 
 		atk_won = atk_fleets > def_destroyed and def_fleets <= atk_destroyed
 		if atk_won: # Attacker won!
-			ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
-			self.planets[from_id]['fleets'] -= atk_fleets
+			ret['sourceLeft'] = from_planet['fleets'] - atk_fleets
+			from_planet['fleets'] -= atk_fleets
 			ret['targetLeft'] = atk_fleets - def_destroyed
-			self.planets[to_id]['fleets'] = atk_fleets - def_destroyed
+			to_planet['fleets'] = atk_fleets - def_destroyed
 			ret['attackerLosses'] = def_destroyed
 			ret['defenderLosses'] = def_fleets
 			ret['targetOwnerChanged'] = True
-			ret['targetOwner'] = self.planets[from_id]['player'].username
-			# Should we give a player some tech points?
-			if self.planets[to_id]['player'] is None:
-				self.game.tech[self.planets[from_id]['player']]['points'] += self.planets[to_id]['baseUnitsPerTurn'] * 3
-			self.planets[to_id]['player'] = self.planets[from_id]['player']
+			ret['targetOwner'] = attacker.username
+			self.update_stat(attacker, 'planetsConquered', 1)
+			# Should we give attacker some tech points?
+			if defender is None: # Planet is owned by nobody
+				self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * 3)
+			else: # Planet is owned by somebody, so they have lost it!
+				self.update_stat(defender, 'planetsLost', 1)
+			to_planet['player'] = attacker
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
 			if atk_fleets <= def_destroyed and def_fleets <= atk_destroyed: # Both sides left with 0
 				ret['attackerLosses'] = atk_fleets
 				ret['defenderLosses'] = def_fleets - 1
-				ret['sourceLeft'] = self.planets[from_id]['fleets'] - atk_fleets
+				ret['sourceLeft'] = from_planet['fleets'] - atk_fleets
 				ret['targetLeft'] = 1
-				self.planets[from_id]['fleets'] -= atk_fleets
-				self.planets[to_id]['fleets'] = 1
+				from_planet['fleets'] -= atk_fleets
+				to_planet['fleets'] = 1
 			else:
 				ret['attackerLosses'] = def_destroyed if atk_fleets > def_destroyed else atk_fleets
 				ret['defenderLosses'] = atk_destroyed if def_fleets > atk_destroyed else def_fleets
-				ret['sourceLeft'] = self.planets[from_id]['fleets'] - def_destroyed
-				ret['targetLeft'] = self.planets[to_id]['fleets'] - atk_destroyed
-				self.planets[from_id]['fleets'] -= def_destroyed
-				self.planets[to_id]['fleets'] -= atk_destroyed
+				ret['sourceLeft'] = from_planet['fleets'] - def_destroyed
+				ret['targetLeft'] = to_planet['fleets'] - atk_destroyed
+				from_planet['fleets'] -= def_destroyed
+				to_planet['fleets'] -= atk_destroyed
+
+		self.update_stat(attacker, 'moveCount', 1)
+		self.update_stat(attacker, 'fleetsDestroyed', ret['defenderLosses'])
+		self.update_stat(attacker, 'fleetsLost', ret['attackerLosses'])
+		if defender is not None:
+			self.update_stat(defender, 'fleetsDestroyed', ret['attackerLosses'])
+			self.update_stat(defender, 'fleetsLost', ret['defenderLosses'])
 
 		return ret
 
@@ -292,5 +332,5 @@ class Map:
 		for (key, ps) in self.planetary_systems.items():
 			if set(ps['planets']).issubset(player_planets):
 				fleets += ps['fleet_bonus']
-				self.game.tech[player]['points'] += int(sum([p['baseUnitsPerTurn'] for p in ps['planets']]) / 5)
+				self.game.add_tech_points(player, sum([p['baseUnitsPerTurn'] for p in ps['planets']]) / 5)
 		return fleets

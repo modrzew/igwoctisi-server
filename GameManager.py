@@ -21,14 +21,17 @@ class GameManager(threading.Thread):
 		self.round_commands = {}
 		self.round_ready = []
 
-		# Set 0 level tech for everyone
-		for p in self.game.players:
+		for p in game.players:
+			# Set 0 level tech for everyone
 			game.tech[p] = {
 				'offensive': 0,
 				'defensive': 0,
 				'economic': 0,
 				'points': 0
 			}
+			# Set 0 for every stat for everyone
+			for (k, s) in game.stats.items():
+				s[p.username] = 0
 
 		game.map.set_starting_positions()
 
