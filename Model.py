@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 from GameManager import GameManager
 import Common
+import Constants
 import random
 import math
 
@@ -32,18 +33,7 @@ class Game:
 		self.name = ''
 		self.map = None
 		self.tech = {}
-		self.stats = {
-			'techGained': {},
-			'techSpent': {},
-			'planetsConquered': {},
-			'planetsLost': {},
-			'systemsConquered': {},
-			'systemsLost': {},
-			'fleetsDeployed': {},
-			'fleetsDestroyed': {},
-			'fleetsLost': {},
-			'moveCount': {}
-		}
+		self.stats = Constants.STATS_TEMPLATE
 		self.max_players = 0
 		self.hosting_player = None
 		self.manager = GameManager(self)
@@ -97,20 +87,24 @@ class Game:
 
 		# Tech
 		if command['type'] == 'tech': # Tech
-			if 'techType' not in command:
+			if 'techType' not in command: # Invalid command
 				return False
-			if 'techType' != 'offensive' and'techType' != 'defensive' and'techType' != 'economic':
+			if command['techType'] != 'offensive' and command['techType'] != 'defensive' \
+				and command['techType'] != 'economic': # Invalid tech
 				return False
-			if not is_precheck:
-				pass
-				# TODO sprawdzanie, czy jest odpowiednia liczba punktow na zakup technologii
+			# Player doesn't have enough tech points
+			if self.tech[player]['points'] < Constants.TECH_COST[self.tech[player][command['techType']]]:
+				return False
 
 		return True
 
 	def execute(self, player, command):
+		"""
+		Executes a command, validating it beforehand
+		"""
 		if self.valid(player, command, False):
 			ret = {'player': player.username, 'type': command['type']}
-			if command['type'] == 'deploy':
+			if command['type'] == 'deploy': # Deploy
 				self.map.deploy(command['targetId'], command['fleetCount'])
 				ret.update({
 					'targetId': command['targetId'],
@@ -125,6 +119,7 @@ class Game:
 				else:
 					updated_command_type = 'attack'
 
+				# Is it move?
 				if updated_command_type == 'move':
 					self.map.move(command['sourceId'], command['targetId'], command['fleetCount'])
 					ret.update({
@@ -134,7 +129,8 @@ class Game:
 						'type': 'move'
 					})
 
-				if updated_command_type == 'attack': # Attack
+				# Or is it attack?
+				if updated_command_type == 'attack':
 					result = self.map.attack(command['sourceId'], command['targetId'], command['fleetCount'])
 					ret.update({
 						'sourceId': command['sourceId'],
@@ -146,7 +142,7 @@ class Game:
 
 			if command['type'] == 'tech': # Tech
 				self.tech[player][command['techType']] += 1
-				# TODO odejmowanie punktów za technologię
+				self.add_tech_points(player, -Constants.TECH_COST[self.tech[player][command['techType']]])
 				return None # We return nothing, so nobody can see what others upgraded
 
 			return ret
@@ -154,6 +150,10 @@ class Game:
 			return None
 
 	def add_tech_points(self, player, points):
+		"""
+		Modifies player's tech points
+		Points may be negative
+		"""
 		self.tech[player]['points'] += int(points)
 		if points > 0:
 			self.update_stat(player, 'techGained', points)
@@ -161,11 +161,18 @@ class Game:
 			self.update_stat(player, 'techLost', points)
 
 	def update_stat(self, player, name, value):
+		"""
+		Updates player's particular stat value
+		Value may be negative
+		"""
 		self.stats[name][player.username] += value
 
 class Map:
 	def set(self, game, map):
-		# Map is a JSON object passed directly from client
+		"""
+		Sets a world to play in
+		map is a JSON object passed directly from client, to be broadcasted to other players
+		"""
 		self.raw_map = map
 
 		if not self.valid(self.raw_map):
@@ -199,6 +206,10 @@ class Map:
 		return True
 
 	def valid(self, raw_map):
+		"""
+		Checks whether map sent by the host is valid
+		"""
+		# TODO stub
 		if 'planets' not in raw_map:
 			return False
 		if 'links' not in raw_map:
@@ -214,6 +225,7 @@ class Map:
 		Deploys fleets on a planet.
 		planetId must correspond to planet ID in self.planets.
 		"""
+		# TODO walidacja - co jeśli chce przydzielić więcej niż może
 		self.planets[planet_id]['fleets'] += count
 		self.game.update_stat(self.planets[planet_id]['player'], 'fleetsDeployed', count)
 
@@ -239,8 +251,8 @@ class Map:
 		ret = {}
 
 		# Chances to destroy one fleet
-		atk_chance = 0.6
-		def_chance = 0.7
+		atk_chance = Constants.DESTROY_CHANCE['attacker']
+		def_chance = Constants.DESTROY_CHANCE['defender']
 
 		from_planet = self.planets[from_id]
 		to_planet = self.planets[to_id]
@@ -313,16 +325,22 @@ class Map:
 		return ret
 
 	def get_current_state(self):
+		"""
+		Returns current world state - all planets, their owners and their fleets
+		"""
 		ret = []
 		for (key, p) in self.planets.items():
 			ret.append({
 				'planetId': p['id'],
-				'playerIndex': self.game.players.index(p['player']) if p['player'] in self.game.players else -1,
+				'player': p['player'].username if p['player'] in self.game.players else None,
 				'fleets': p['fleets']
 			})
 		return ret
 
 	def set_starting_positions(self):
+		"""
+		Puts players on random starting planets
+		"""
 		planets_temp = self.starting_data
 		for p in self.game.players:
 			planet = random.choice(planets_temp)
@@ -331,6 +349,9 @@ class Map:
 			planets_temp.remove(planet)
 
 	def fleets_per_turn(self, player):
+		"""
+		Returns fleet count that player is able to deploy
+		"""
 		fleets = 0
 		player_planets = []
 		for (key, p) in self.planets.items():

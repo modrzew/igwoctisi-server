@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 import Common
 import Model
+import Constants
 import threading
 import time
 import random
@@ -8,6 +9,9 @@ from datetime import datetime
 
 
 class GameManager(threading.Thread):
+	"""
+	This class is used to manage a game (wow, really?)
+	"""
 	def __init__(self, game):
 		super(GameManager, self).__init__()
 		self.game = game
@@ -17,6 +21,14 @@ class GameManager(threading.Thread):
 		self.game_start_time = time.time()
 
 	def run(self):
+		"""
+		This method runs everything, literally
+		It's even called "run"
+		But we call it with "GameManager.start()"
+		I think it's not quite acceptable in this era that promotes equality so much, is it?
+		"run" method has feelings too! It wants to be called too!
+		Join now our movement at http://stoprundiscrimination.com/ and show them we're much more equal than they are!
+		"""
 		game = self.game
 		game.state = Model.Game.IN_PROGRESS
 		self.round = 1
@@ -35,22 +47,23 @@ class GameManager(threading.Thread):
 			for (k, s) in game.stats.items():
 				s[p.username] = 0
 
+		# Put everyone in place
 		game.map.set_starting_positions()
 
 		Common.console_message('Game %d started!' % game.id)
 
-		while game.state == Model.Game.IN_PROGRESS:
+		while game.state == Model.Game.IN_PROGRESS: # As long as game is not finished!
 			self.round_ready = []
 			# We wait for players to be ready
 			while game.state == Model.Game.IN_PROGRESS:
 				if self.has_game_ended(): # Has the game ended?
 					self.game_end()
 				if set(game.players).issubset(self.round_ready): # Everyone is ready!
-					break
+					break # RatajException
 				time.sleep(0.5)
 
 			self.round_commands = {}
-			round_time = 300
+			round_time = Constants.ROUND_TIME
 			current_map = game.map.get_current_state()
 			for p in game.players:
 				object_to_send = {
@@ -68,7 +81,7 @@ class GameManager(threading.Thread):
 				if self.has_game_ended(): # Has the game ended?
 					self.game_end()
 				if set(game.players).issubset(self.round_commands.keys()): # Everyone sent their orders
-					break
+					break # RatajException
 				time.sleep(0.5)
 			# Assume that round has ended and we have everyone's orders
 			# Zero, randomize the players!
@@ -77,16 +90,17 @@ class GameManager(threading.Thread):
 			commands = self.order_commands()
 			# And now let's execute them, shall we?
 			results = self.execute_commands(commands)
+			# ...has someone won the game, accidentally?
 			# TODO wygrywanie gry
 			# Then send the results to all players
 			for p in self.game.players:
 				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
-			# To the next round!
+			# And to the next round!
 			self.round += 1
 
 	def set_round_commands(self, player, commands):
 		"""
-		Set round commands for a player
+		Sets round commands for a player
 		"""
 		# Check if everything can be executed
 		commands_temp = {'tech': [], 'deploy': [], 'move': []}
@@ -110,7 +124,7 @@ class GameManager(threading.Thread):
 
 	def order_players(self):
 		"""
-		Put players in order (currently random)
+		Puts players in order (currently only random)
 		"""
 		p = self.game.players
 		random.shuffle(p)
@@ -118,7 +132,7 @@ class GameManager(threading.Thread):
 
 	def order_commands(self):
 		"""
-		Put commands in the same order self.players_order was put
+		Puts commands in the same order self.players_order was put
 		As in: 1st command for P1, 1st command for P2 (...) 2nd command for P1, 2nd command for P2 and so on
 		"""
 		commands = []
@@ -150,7 +164,7 @@ class GameManager(threading.Thread):
 
 	def execute_commands(self, commands):
 		"""
-		Execute given commands on a world state (Map)
+		Executes given commands on a world state (Map)
 		"""
 		results = []
 
@@ -162,6 +176,9 @@ class GameManager(threading.Thread):
 		return results
 
 	def game_end(self):
+		"""
+		Ends the game
+		"""
 		self.game.state = Model.Game.FINISHED
 		for p in self.game.players:
 			message = self.game_end_message()
@@ -169,6 +186,9 @@ class GameManager(threading.Thread):
 			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
 
 	def game_end_message(self):
+		"""
+		Prepares a gameEnd message for player (if he lost) or players (if game ended)
+		"""
 		places = [p.username for p in self.game.players_lost]
 		places.reverse()
 		ret = {
@@ -180,6 +200,9 @@ class GameManager(threading.Thread):
 		return ret
 
 	def has_game_ended(self):
+		"""
+		Checks whether game has ended already
+		"""
 		# No players left
 		if self.game.players is []:
 			return True
@@ -187,21 +210,23 @@ class GameManager(threading.Thread):
 		return False
 
 	def player_lost(self, player, send_game_end):
+		"""
+		Removes player from game, notifies
+		"""
 		player.current_game = None
 		self.game.players.remove(player)
 		self.game.players_lost.append(player)
 		del self.game.tech[player]
-		if self.has_game_ended():
+		if self.has_game_ended(): # Has the game ended?
 			self.game_end()
-		else:
-			for (k, p) in self.game.map.planets.items():
+		else: # No?
+			for (k, p) in self.game.map.planets.items(): # Free his planets from tyranny
 				if p['player'] is player:
 					p['player'] = None
-			# Notify players in game about their loss
 			t = datetime.today().strftime('%H:%M')
-			for p in self.game.players:
+			for p in self.game.players: # Let's notify others about player loss!
 				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
-		if send_game_end:
+		if send_game_end: # Does the player still care, or has he just... disconnected?
 			message = self.game_end_message()
 			message['endType'] = 'loss'
 			player.socket.send(Common.json_message('gameEnd', message, player.socket.get_next_message_id()))

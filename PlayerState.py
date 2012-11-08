@@ -4,7 +4,7 @@ import Common
 from datetime import datetime
 import random
 
-# Each class (state) must have request(player, request) method
+# Each class (state) must have request(player, request) method and disconnect(player) method
 # We expect request to be already validated as JSON object containing type, object and id fields
 
 class Disconnected:
@@ -21,6 +21,8 @@ class NotLoggedIn:
 		if request['type'] == 'login':
 			if 'username' not in request['object'] or 'password' not in request['object']:
 				return Common.json_error('invalidParameters', request['id'])
+			if request['object']['username'] in [p.username for p in Model.players]:
+				return Common.json_error('loginFailed', request['id'])
 			player.username = request['object']['username']
 			player.state = LoggedIn()
 			Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
