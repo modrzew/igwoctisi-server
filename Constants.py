@@ -10,6 +10,12 @@ TECH_COST = {
 	3: 400
 }
 
+# How much more tech points to give for conquerring planet for the first time?
+TECH_POINTS_PLANET_MULTIPLIER = 3
+
+# How much more tech points to give for a planetary system each round?
+TECH_POINTS_SYSTEM_MULTIPLIER = 0.2
+
 # Chances to destroy fleet for both attacker [0] and defender [1]
 DESTROY_CHANCE = {
 	'attacker': 0.6,
