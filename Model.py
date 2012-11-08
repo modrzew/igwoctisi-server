@@ -16,6 +16,7 @@ class Player:
 		self.username = ''
 		self.state = None
 		self.current_game = None
+		self.planets = []
 
 
 class Game:
@@ -304,7 +305,10 @@ class Map:
 				self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * Constants.TECH_POINTS_PLANET_MULTIPLIER)
 			else: # Planet is owned by somebody, so they have lost it!
 				self.game.update_stat(defender, 'planetsLost', 1)
-			to_planet['player'] = attacker
+			self.set_planet_owner(to_id, attacker)
+			# Has the defender... lost the game?
+			if defender is not None and defender.planets is []:
+				self.game.manager.player_lost(defender, True)
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
 			if atk_fleets <= def_destroyed and def_fleets <= atk_destroyed: # Both sides left with 0
@@ -351,7 +355,7 @@ class Map:
 		planets_temp = self.starting_data
 		for p in self.game.players:
 			planet = random.choice(planets_temp)
-			self.planets[planet]['player'] = p
+			self.set_planet_owner(planet, p)
 			self.planets[planet]['fleets'] = 0
 			self.planets_conquered.append(planet)
 			planets_temp.remove(planet)
@@ -376,3 +380,12 @@ class Map:
 				self.game.add_tech_points(player, int(math.ceil(tech_points * Constants.TECH_POINTS_SYSTEM_MULTIPLIER)))
 		fleets = int(math.ceil(fleets * (1 + Constants.UPGRADE_BONUS['economic'] * self.game.tech[player]['economic'])))
 		return fleets
+
+	def set_planet_owner(self, planet_id, player):
+		"""
+		Sets owner of planet to player
+		"""
+		if self.planets[planet_id]['player']:
+			self.planets[planet_id]['player'].planets.remove(self.planets[planet_id])
+		self.planets[planet_id]['player'] = player
+		player.planets.append(self.planets[planet_id])

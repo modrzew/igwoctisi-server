@@ -2,6 +2,7 @@
 import Common
 import Model
 import Constants
+import PlayerState
 import threading
 import time
 import random
@@ -53,11 +54,15 @@ class GameManager(threading.Thread):
 		Common.console_message('Game %d started!' % game.id)
 
 		while game.state == Model.Game.IN_PROGRESS: # As long as game is not finished!
+			if self.has_game_ended(): # Has the game ended?
+				self.game_end()
+				return None
 			self.round_ready = []
 			# We wait for players to be ready
 			while game.state == Model.Game.IN_PROGRESS:
 				if self.has_game_ended(): # Has the game ended?
 					self.game_end()
+					return None
 				if set(game.players).issubset(self.round_ready): # Everyone is ready!
 					break # RatajException
 				time.sleep(0.5)
@@ -80,6 +85,7 @@ class GameManager(threading.Thread):
 			while time.time() - round_start_time < round_time and game.state == Model.Game.IN_PROGRESS:
 				if self.has_game_ended(): # Has the game ended?
 					self.game_end()
+					return None
 				if set(game.players).issubset(self.round_commands.keys()): # Everyone sent their orders
 					break # RatajException
 				time.sleep(0.5)
@@ -91,7 +97,9 @@ class GameManager(threading.Thread):
 			# And now let's execute them, shall we?
 			results = self.execute_commands(commands)
 			# ...has someone won the game, accidentally?
-			# TODO wygrywanie gry
+			if self.has_game_ended():
+				self.game_end()
+				return None
 			# Then send the results to all players
 			for p in self.game.players:
 				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
@@ -183,13 +191,16 @@ class GameManager(threading.Thread):
 		for p in self.game.players:
 			message = self.game_end_message()
 			message['endType'] = 'gameEnd'
+			p.current_game = None
+			p.state = PlayerState.LoggedIn()
 			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
+		Model.games.remove(self.game)
 
 	def game_end_message(self):
 		"""
 		Prepares a gameEnd message for player (if he lost) or players (if game ended)
 		"""
-		places = [p.username for p in self.game.players_lost]
+		places = [p.username for p in self.game.players_lost] + [p.username for p in self.game.players]
 		places.reverse()
 		ret = {
 			'places': places,
@@ -203,8 +214,15 @@ class GameManager(threading.Thread):
 		"""
 		Checks whether game has ended already
 		"""
+		# TODO usunąć, gdy klient będzie obsługiwał koniec gry
+		if True: # żeby PyCharm się nie czepiał :D
+			return False
+
 		# No players left
 		if self.game.players is []:
+			return True
+		# Only one player remaining
+		if len(self.game.players) == 1:
 			return True
 
 		return False
@@ -214,6 +232,7 @@ class GameManager(threading.Thread):
 		Removes player from game, notifies
 		"""
 		player.current_game = None
+		player.state = PlayerState.LoggedIn()
 		self.game.players.remove(player)
 		self.game.players_lost.append(player)
 		del self.game.tech[player]
