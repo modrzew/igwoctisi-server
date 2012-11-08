@@ -265,6 +265,10 @@ class Map:
 		attacker = from_planet['player']
 		defender = to_planet['player']
 
+		# Upgrades
+		atk_chance += Constants.UPGRADE_BONUS['offensive'] * self.game.tech[attacker]['offensive']
+		def_chance += Constants.UPGRADE_BONUS['defensive'] * self.game.tech[attacker]['defensive']
+
 		# "Ideal" battle without luck factor
 		atk_destroyed_ideal = atk_chance * atk_fleets
 		def_destroyed_ideal = def_chance * def_fleets
@@ -349,12 +353,13 @@ class Map:
 			planet = random.choice(planets_temp)
 			self.planets[planet]['player'] = p
 			self.planets[planet]['fleets'] = 0
-			self.planets_conquered.append(planet['id'])
+			self.planets_conquered.append(planet)
 			planets_temp.remove(planet)
 
 	def fleets_per_turn(self, player):
 		"""
 		Returns fleet count that player is able to deploy
+		Also add bonus tech points for planetary systems
 		"""
 		fleets = 0
 		player_planets = []
@@ -369,4 +374,5 @@ class Map:
 				for index in ps['planets']:
 					tech_points += self.planets[index]['baseUnitsPerTurn']
 				self.game.add_tech_points(player, int(math.ceil(tech_points * Constants.TECH_POINTS_SYSTEM_MULTIPLIER)))
+		fleets = int(math.ceil(fleets * (1 + Constants.UPGRADE_BONUS['economic'] * self.game.tech[player]['economic'])))
 		return fleets
