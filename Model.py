@@ -181,17 +181,19 @@ class Map:
 		self.game = game
 
 		self.name = map['name']
-		# Planet - id: {name, base_units_per_turn}
+		# Planet
 		self.planets = {}
 		for planet in map['planets']:
 			p = {'name': planet['name'], 'id': int(planet['id']), 'baseUnitsPerTurn': int(planet['baseUnitsPerTurn']),
 				 'links': [], 'planetary_system': None, 'player': None, 'fleets': int(planet['baseUnitsPerTurn'])}
 			self.planets[planet['id']] = p
-		# Links
+		# Conquered planets (containing planet IDs) - for giving tech point bonus for conquering for first time
+		self.planets_conquered = []
+		# Links between planets
 		for link in map['links']:
 			self.planets[link['sourcePlanet']]['links'].append(link['targetPlanet'])
 			self.planets[link['targetPlanet']]['links'].append(link['sourcePlanet'])
-		# System: {name, planetsId[]}
+		# Planetary systems
 		self.planetary_systems = {}
 		for ps in map['planetarySystems']:
 			planetary_system = {'id': ps['id'], 'fleet_bonus': int(ps['fleetBonusPerTurn']), 'name': ps['name'],
@@ -199,7 +201,7 @@ class Map:
 			self.planetary_systems[ps['id']] = planetary_system
 			for planet_id in planetary_system['planets']:
 				self.planets[planet_id]['planetary_system'] = ps['id']
-		# Starting data: [planetId]
+		# Starting data (containing planet IDs)
 		self.starting_data = [sd['planetId'] for sd in map['playerStartingData']]
 		self.game.max_players = len(self.starting_data)
 
@@ -293,7 +295,8 @@ class Map:
 			ret['targetOwner'] = attacker.username
 			self.game.update_stat(attacker, 'planetsConquered', 1)
 			# Should we give attacker some tech points?
-			if defender is None: # Planet is owned by nobody
+			if defender is None and to_planet['id'] not in self.planets_conquered: # Planet is owned by nobody
+				self.planets_conquered.append(to_planet['id'])
 				self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * 3)
 			else: # Planet is owned by somebody, so they have lost it!
 				self.game.update_stat(defender, 'planetsLost', 1)
@@ -346,6 +349,7 @@ class Map:
 			planet = random.choice(planets_temp)
 			self.planets[planet]['player'] = p
 			self.planets[planet]['fleets'] = 0
+			self.planets_conquered.append(planet['id'])
 			planets_temp.remove(planet)
 
 	def fleets_per_turn(self, player):
