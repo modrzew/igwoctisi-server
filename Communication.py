@@ -22,7 +22,7 @@ class RequestQueryChecker(threading.Thread):
 				player = request[0]
 				response = player.state.request(request[0], request[1])
 				# If we get None, we assume everything is ok and there is no need to send anything back
-				if response and not isinstance(self.player.state, PlayerState.Disconnected):
+				if response and not isinstance(player.state, PlayerState.Disconnected):
 					player.socket.send(response)
 			except Queue.Empty: # Queue is empty, so... do another loop
 				pass

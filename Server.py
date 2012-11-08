@@ -3,7 +3,7 @@ import Communication
 import Common
 import sys
 import time
-import os, os.path
+import os
 
 
 if __name__ == "__main__":

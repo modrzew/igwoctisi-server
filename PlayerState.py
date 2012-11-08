@@ -190,7 +190,7 @@ class InGame:
 		# Leaving the game
 		if request['type'] == 'gameLeave':
 			Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
-			g = player.current_game.manager.player_lost(player, True)
+			player.current_game.manager.player_lost(player, True)
 			player.state = LoggedIn()
 			return None
 
@@ -227,5 +227,5 @@ class InGame:
 		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
-		g = player.current_game.manager.player_lost(player, False)
+		player.current_game.manager.player_lost(player, False)
 		player.state = Disconnected()
