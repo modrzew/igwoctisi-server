@@ -42,8 +42,8 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 				data = self.rfile.readline()
 			except socket.error, e:
 				self.player.state.disconnect(self.player)
-				Common.console_message('Exception %d - %s; %s (%s) disconnected' % (e.errno, e.strerror, self.player.username, self.request.getpeername()[0]))
-				continue
+				Common.console_message('Connection exception - %s disconnected' % (self.player.username))
+				break
 			if data == '': # Socket disconnected
 				self.player.state.disconnect(self.player)
 				Common.console_message('%s (%s) disconnected' % (self.player.username, self.request.getpeername()[0]))

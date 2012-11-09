@@ -49,7 +49,7 @@ if __name__ == "__main__":
 			p.socket.close()
 			del p
 		for g in Model.games:
-			g.manager.end_game()
+			g.manager.game_end()
 			del g
 
 	if Common.LOG_FILE:

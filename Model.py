@@ -323,7 +323,7 @@ class Map:
 				ret['defenderLosses'] = atk_destroyed if def_fleets > atk_destroyed else def_fleets
 				ret['sourceLeft'] = from_planet['fleets'] - (def_destroyed if atk_fleets > def_destroyed else atk_fleets)
 				ret['targetLeft'] = to_planet['fleets'] - atk_destroyed
-				from_planet['fleets'] -= def_destroyed
+				from_planet['fleets'] -= (def_destroyed if atk_fleets > def_destroyed else atk_fleets)
 				to_planet['fleets'] -= atk_destroyed
 
 		self.game.update_stat(attacker, 'moveCount', 1)
