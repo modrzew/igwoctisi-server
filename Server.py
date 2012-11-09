@@ -45,5 +45,5 @@ if __name__ == "__main__":
 		Common.console_message('Shutting down server.')
 		requestQueryChecker.is_running = False
 
-	if Communication.DEBUG_MODE:
+	if Common.LOG_FILE:
 		Common.LOG_FILE.close()
