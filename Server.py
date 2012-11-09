@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 import Communication
 import Common
+import Model
 import sys
 import time
 import os
@@ -44,6 +45,8 @@ if __name__ == "__main__":
 	except KeyboardInterrupt: # When Ctrl+C is hit
 		Common.console_message('Shutting down server.')
 		requestQueryChecker.is_running = False
+		for p in Model.players:
+			p.socket.shutdown()
 
 	if Common.LOG_FILE:
 		Common.LOG_FILE.close()
