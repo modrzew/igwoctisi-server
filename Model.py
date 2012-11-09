@@ -321,7 +321,7 @@ class Map:
 			else:
 				ret['attackerLosses'] = def_destroyed if atk_fleets > def_destroyed else atk_fleets
 				ret['defenderLosses'] = atk_destroyed if def_fleets > atk_destroyed else def_fleets
-				ret['sourceLeft'] = from_planet['fleets'] - def_destroyed
+				ret['sourceLeft'] = from_planet['fleets'] - (def_destroyed if atk_fleets > def_destroyed else atk_fleets)
 				ret['targetLeft'] = to_planet['fleets'] - atk_destroyed
 				from_planet['fleets'] -= def_destroyed
 				to_planet['fleets'] -= atk_destroyed

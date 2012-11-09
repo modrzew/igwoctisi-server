@@ -6,6 +6,7 @@ import json
 import threading
 import Queue
 import PlayerState
+import socket
 
 request_query = Queue.Queue()
 DEBUG_MODE = False
@@ -37,7 +38,12 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		self.last_message_id = 65535
 
 		while True:
-			data = self.rfile.readline()
+			try:
+				data = self.rfile.readline()
+			except socket.error, e:
+				self.player.state.disconnect(self.player)
+				Common.console_message('Exception %d - %s; %s (%s) disconnected' % (e.errno, e.strerror, self.player.username, self.request.getpeername()[0]))
+				continue
 			if data == '': # Socket disconnected
 				self.player.state.disconnect(self.player)
 				Common.console_message('%s (%s) disconnected' % (self.player.username, self.request.getpeername()[0]))

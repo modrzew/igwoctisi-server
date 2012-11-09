@@ -46,7 +46,11 @@ if __name__ == "__main__":
 		Common.console_message('Shutting down server.')
 		requestQueryChecker.is_running = False
 		for p in Model.players:
-			p.socket.shutdown()
+			p.socket.close()
+			del p
+		for g in Model.games:
+			g.manager.end_game()
+			del g
 
 	if Common.LOG_FILE:
 		Common.LOG_FILE.close()
