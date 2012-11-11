@@ -73,10 +73,8 @@ class GameManager(threading.Thread):
 			for p in game.players:
 				object_to_send = {
 					'players': [pl.username for pl in game.players],
-					'map': current_map,
-					# TODO odkomentować gdy klient nie będzie rzucał wyjątkiem
-#					'tech': game.tech[p],
-					'tech': [],
+					'map': current_map,					
+					'tech': game.tech[p],					
 					'fleetsToDeploy': self.game.map.fleets_per_turn(p),
 					'roundTime': round_time
 				}
