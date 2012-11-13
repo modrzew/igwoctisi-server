@@ -207,11 +207,17 @@ class GameManager(threading.Thread):
 		"""
 		places = [p.username for p in self.game.players_lost] + [p.username for p in self.game.players]
 		places.reverse()
+		# Put empty lists to stats
+		stats = {}
+		for i in self.game.stats:
+			stats[i] = []
+			for p in places:
+				stats[i].append(self.game.stats[i][p])
 		ret = {
 			'places': places,
 			'rounds': self.round,
 			'time': int(time.time() - self.game_start_time),
-			'stats': self.game.stats
+			'stats': stats
 		}
 		return ret
 

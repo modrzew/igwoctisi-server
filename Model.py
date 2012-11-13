@@ -97,7 +97,7 @@ class Game:
 			if command['techType'] not in Constants.UPGRADE_BONUS: # Invalid tech
 				return False
 			# Player doesn't have enough tech points
-			if self.tech[player]['points'] < Constants.TECH_COST[self.tech[player][command['techType']]]:
+			if self.tech[player]['points'] < Constants.TECH_COST[command['techType']]:
 				return False
 
 		return True
@@ -146,7 +146,7 @@ class Game:
 
 			if command['type'] == 'tech': # Tech
 				self.tech[player][command['techType']] += 1
-				self.add_tech_points(player, -Constants.TECH_COST[self.tech[player][command['techType']]])
+				self.add_tech_points(player, -Constants.TECH_COST[command['techType']])
 				return None # We return nothing, so nobody can see what others upgraded
 
 			return ret
