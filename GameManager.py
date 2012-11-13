@@ -213,7 +213,7 @@ class GameManager(threading.Thread):
 		Checks whether game has ended already
 		"""
 		# TODO usunąć, gdy klient będzie obsługiwał koniec gry
-		if True: # żeby PyCharm się nie czepiał :D
+		if False: # żeby PyCharm się nie czepiał :D
 			return False
 
 		# No players left

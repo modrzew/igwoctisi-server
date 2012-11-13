@@ -112,7 +112,6 @@ class InLobby:
 			for p in g.players:
 				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
 			player.current_game = None
-		Common.console_message('%s left the game "%s" (#%d)' % (player.username, player.current_game.name, player.current_game.id))
 
 	def request(self, player, request):
 		# Chatting
@@ -152,15 +151,17 @@ class InLobby:
 			p = p[0]
 			Common.console_message('%s was kicked out of the game "%s" (#%d)' % (p.username, g.name, g.id))
 			# Notify the others about sudden leave, and the one kicked about... well, being kicked
+			player.socket.send(Common.json_ok(request['id']))
+			t = datetime.today().strftime('%H:%M')
 			for p2 in g.players:
 				if p2 is p:
 					p2.socket.send(Common.json_message('gameKick', None, p2.socket.get_next_message_id()))
 				else:
-					p2.socket.send(Common.json_message('gamePlayerKicked', {'username': p.username}, p2.socket.get_next_message_id()))
+					p2.socket.send(Common.json_message('gamePlayerKicked', {'username': p.username, 'time': t}, p2.socket.get_next_message_id()))
 			p.current_game = None
 			g.players.remove(p)
 			p.state = LoggedIn()
-			return Common.json_ok(request['id'])
+			return None
 
 
 		# Starting the game

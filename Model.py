@@ -50,13 +50,11 @@ class Game:
 		to_id = command['targetId']
 		count = command['fleetCount']
 
-		# Checking the basics
-		if to_id not in self.map.planets: # Wrong id
-			return False
-		to_planet = self.map.planets[to_id]
-
 		# Move
 		if command['type'] == 'move':
+			if to_id not in self.map.planets: # Wrong id
+				return False
+			to_planet = self.map.planets[to_id]
 			if from_id not in self.map.planets: # Wrong id
 				return False
 			from_planet = self.map.planets[from_id]
@@ -70,6 +68,9 @@ class Game:
 
 		# Attack
 		if command['type'] == 'attack':
+			if to_id not in self.map.planets: # Wrong id
+				return False
+			to_planet = self.map.planets[to_id]
 			if from_id not in self.map.planets: # Wrong id
 				return False
 			from_planet = self.map.planets[from_id]
@@ -83,6 +84,9 @@ class Game:
 
 		# Deploy
 		if command['type'] == 'deploy': # Deploy
+			if to_id not in self.map.planets: # Wrong id
+				return False
+			to_planet = self.map.planets[to_id]
 			if to_planet['player'] is not player: # Player doesn't own that planet
 				return False
 
@@ -90,8 +94,7 @@ class Game:
 		if command['type'] == 'tech': # Tech
 			if 'techType' not in command: # Invalid command
 				return False
-			if command['techType'] != 'offensive' and command['techType'] != 'defensive' \
-				and command['techType'] != 'economic': # Invalid tech
+			if command['techType'] not in Constants.UPGRADE_BONUS: # Invalid tech
 				return False
 			# Player doesn't have enough tech points
 			if self.tech[player]['points'] < Constants.TECH_COST[self.tech[player][command['techType']]]:
