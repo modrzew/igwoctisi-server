@@ -35,6 +35,7 @@ class GameManager(threading.Thread):
 		self.round = 1
 		self.round_commands = {}
 		self.round_ready = []
+		self.round_fleets_to_deploy = {}
 
 		for p in game.players:
 			# Set 0 level tech for everyone
@@ -71,11 +72,13 @@ class GameManager(threading.Thread):
 			round_time = Constants.ROUND_TIME
 			current_map = game.map.get_current_state()
 			for p in game.players:
+				fleets_to_deploy = self.game.map.fleets_per_turn(p)
+				self.round_fleets_to_deploy[p] = fleets_to_deploy
 				object_to_send = {
 					'players': [pl.username for pl in game.players],
 					'map': current_map,					
 					'tech': game.tech[p],					
-					'fleetsToDeploy': self.game.map.fleets_per_turn(p),
+					'fleetsToDeploy': fleets_to_deploy,
 					'roundTime': round_time
 				}
 				p.socket.send(Common.json_message('roundStart', object_to_send, p.socket.get_next_message_id()))
@@ -125,6 +128,9 @@ class GameManager(threading.Thread):
 			if c['type'] == 'tech':
 				if not c['techType'] in [com['techType'] for com in commands_temp['tech']]: # Only 1 upgrade per turn
 					commands_temp['tech'].append(c)
+		# Check if player has not deployed more than they have
+		if sum([c['fleetCount'] for c in commands_temp['deploy']]) > self.round_fleets_to_deploy[player]:
+			return False
 		self.round_commands[player] = commands_temp
 		return True
 
@@ -190,6 +196,7 @@ class GameManager(threading.Thread):
 			message = self.game_end_message()
 			message['endType'] = 'gameEnd'
 			p.current_game = None
+			p.planets = []
 			p.state = PlayerState.LoggedIn()
 			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
 		Model.games.remove(self.game)
@@ -213,7 +220,7 @@ class GameManager(threading.Thread):
 		Checks whether game has ended already
 		"""
 		# TODO usunąć, gdy klient będzie obsługiwał koniec gry
-		if False: # żeby PyCharm się nie czepiał :D
+		if True: # żeby PyCharm się nie czepiał :D
 			return False
 
 		# No players left
@@ -231,6 +238,7 @@ class GameManager(threading.Thread):
 		"""
 		player.current_game = None
 		player.state = PlayerState.LoggedIn()
+		player.planets = []
 		self.game.players.remove(player)
 		self.game.players_lost.append(player)
 		del self.game.tech[player]

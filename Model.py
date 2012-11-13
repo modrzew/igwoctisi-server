@@ -231,7 +231,6 @@ class Map:
 		Deploys fleets on a planet.
 		planetId must correspond to planet ID in self.planets.
 		"""
-		# TODO walidacja - co jeśli chce przydzielić więcej niż może
 		self.planets[planet_id]['fleets'] += count
 		self.game.update_stat(self.planets[planet_id]['player'], 'fleetsDeployed', count)
 
