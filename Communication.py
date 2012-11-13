@@ -40,9 +40,9 @@ class RequestHandler(SocketServer.StreamRequestHandler):
 		while True:
 			try:
 				data = self.rfile.readline()
-			except socket.error, e:
+			except socket.error:
 				self.player.state.disconnect(self.player)
-				Common.console_message('Connection exception - %s disconnected' % (self.player.username))
+				Common.console_message('Connection exception - %s disconnected' % self.player.username)
 				break
 			if data == '': # Socket disconnected
 				self.player.state.disconnect(self.player)
