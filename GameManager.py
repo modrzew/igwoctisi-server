@@ -208,11 +208,12 @@ class GameManager(threading.Thread):
 		places = [p.username for p in self.game.players_lost] + [p.username for p in self.game.players]
 		places.reverse()
 		# Put empty lists to stats
-		stats = {}
+		stats = []
 		for i in self.game.stats:
-			stats[i] = []
+			tempStat = {'name': i, 'values': []}
 			for p in places:
-				stats[i].append(self.game.stats[i][p])
+				tempStat['values'].append(self.game.stats[i][p])
+			stats.append(tempStat)
 		ret = {
 			'places': places,
 			'rounds': self.round,
@@ -225,10 +226,6 @@ class GameManager(threading.Thread):
 		"""
 		Checks whether game has ended already
 		"""
-		# TODO usunąć, gdy klient będzie obsługiwał koniec gry
-		if True: # żeby PyCharm się nie czepiał :D
-			return False
-
 		# No players left
 		if self.game.players is []:
 			return True

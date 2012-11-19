@@ -115,7 +115,8 @@ class Game:
 				self.map.deploy(command['targetId'], command['fleetCount'])
 				ret.update({
 					'targetId': command['targetId'],
-					'fleetCount': command['fleetCount']
+					'fleetCount': command['fleetCount'],
+					'targetLeft': self.map.planets[command['targetId']]['fleets']
 				})
 
 			# Maybe, in the course of time, target planed changed its owner
@@ -133,7 +134,9 @@ class Game:
 						'sourceId': command['sourceId'],
 						'targetId': command['targetId'],
 						'fleetCount': command['fleetCount'],
-						'type': 'move'
+						'type': 'move',
+						'sourceLeft': self.map.planets[command['sourceId']]['fleets'],
+						'targetLeft': self.map.planets[command['targetId']]['fleets']
 					})
 
 				# Or is it attack?
