@@ -229,8 +229,8 @@ class GameManager(threading.Thread):
 		# No players left
 		if self.game.players is []:
 			return True
-		# Only one player remaining
-		if len(self.game.players) == 1:
+		# Only one player remaining, in case there were others
+		if len(self.game.players) == 1 and len(self.game.players_lost) > 0:
 			return True
 
 		return False
