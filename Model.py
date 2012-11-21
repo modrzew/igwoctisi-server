@@ -308,9 +308,10 @@ class Map:
 			ret['targetOwner'] = attacker.username
 			self.game.update_stat(attacker, 'planetsConquered', 1)
 			# Should we give attacker some tech points?
-			if defender is None and to_planet['id'] not in self.planets_conquered: # Planet is owned by nobody
+			if defender is None: # Planet is owned by nobody
 				self.planets_conquered.append(to_planet['id'])
-				self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * Constants.TECH_POINTS_PLANET_MULTIPLIER)
+				if to_planet['id'] not in self.planets_conquered:
+					self.game.add_tech_points(attacker, to_planet['baseUnitsPerTurn'] * Constants.TECH_POINTS_PLANET_MULTIPLIER)
 			else: # Planet is owned by somebody, so they have lost it!
 				self.game.update_stat(defender, 'planetsLost', 1)
 			self.set_planet_owner(to_id, attacker)
