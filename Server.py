@@ -45,8 +45,9 @@ if __name__ == "__main__":
 	except KeyboardInterrupt: # When Ctrl+C is hit
 		Common.console_message('Shutting down server.')
 		requestQueryChecker.is_running = False
+		server.shutdown()
 		for p in Model.players:
-			p.socket.close()
+			server.shutdown_request(p.socket)
 			del p
 		for g in Model.games:
 			g.manager.game_end()
