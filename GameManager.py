@@ -199,7 +199,8 @@ class GameManager(threading.Thread):
 			p.planets = []
 			p.state = PlayerState.LoggedIn()
 			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
-		Model.games.remove(self.game)
+		if self.game in Model.games:
+			Model.games.remove(self.game)
 
 	def game_end_message(self):
 		"""
