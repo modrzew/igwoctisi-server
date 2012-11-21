@@ -155,7 +155,7 @@ class GameManager(threading.Thread):
 			for p in self.players_order:
 				if p in self.round_commands and self.round_commands[p]['tech']:
 					move_while_break = False # Oh, so there are some orders
-					commands.append({'player': p, 'command': self.round_commands[p]['tech'].pop()})
+					commands.append({'player': p, 'command': self.round_commands[p]['tech'].pop(0)})
 		# Deploy
 		move_while_break = False
 		while not move_while_break:
@@ -163,7 +163,7 @@ class GameManager(threading.Thread):
 			for p in self.players_order:
 				if p in self.round_commands and self.round_commands[p]['deploy']:
 					move_while_break = False # Oh, so there are some orders
-					commands.append({'player': p, 'command': self.round_commands[p]['deploy'].pop()})
+					commands.append({'player': p, 'command': self.round_commands[p]['deploy'].pop(0)})
 		# Move/attack
 		move_while_break = False
 		while not move_while_break:
@@ -171,7 +171,7 @@ class GameManager(threading.Thread):
 			for p in self.players_order:
 				if p in self.round_commands and self.round_commands[p]['move']:
 					move_while_break = False # Oh, so there are some orders
-					commands.append({'player': p, 'command': self.round_commands[p]['move'].pop()})
+					commands.append({'player': p, 'command': self.round_commands[p]['move'].pop(0)})
 		return commands
 
 	def execute_commands(self, commands):
