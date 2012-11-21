@@ -36,7 +36,6 @@ STATS_TEMPLATE = {
 	'techSpent': {},
 	'planetsConquered': {},
 	'planetsLost': {},
-	'systemsConquered': {},
 	'systemsLost': {},
 	'fleetsDeployed': {},
 	'fleetsDestroyed': {},

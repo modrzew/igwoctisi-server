@@ -168,7 +168,7 @@ class Game:
 		if points > 0:
 			self.update_stat(player, 'techGained', points)
 		elif points < 0:
-			self.update_stat(player, 'techSpent', points)
+			self.update_stat(player, 'techSpent', -points)
 
 	def update_stat(self, player, name, value):
 		"""
