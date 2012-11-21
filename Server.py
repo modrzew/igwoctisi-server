@@ -47,7 +47,7 @@ if __name__ == "__main__":
 		requestQueryChecker.is_running = False
 		server.shutdown()
 		for p in Model.players:
-			server.shutdown_request(p.socket)
+			#server.shutdown_request(p.socket)
 			del p
 		for g in Model.games:
 			g.manager.game_end()
