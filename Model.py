@@ -62,9 +62,9 @@ class Game:
 				return False
 			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
-			if not is_precheck:
-				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
-					return False
+#			if not is_precheck:
+#				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
+#					return False
 
 		# Attack
 		if command['type'] == 'attack':
@@ -78,9 +78,9 @@ class Game:
 				return False
 			if to_planet['id'] not in from_planet['links']: # Planets must be linked
 				return False
-			if not is_precheck:
-				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
-					return False
+#			if not is_precheck:
+#				if from_planet['fleets'] <= count: # At least one fleet must always stay behind
+#					return False
 
 		# Deploy
 		if command['type'] == 'deploy': # Deploy
@@ -126,6 +126,13 @@ class Game:
 					updated_command_type = 'move'
 				else:
 					updated_command_type = 'attack'
+
+				# If planet count changed in the meantime, adjust the fleetCount
+				if (self.map.planets[command['sourceId']]['fleets'] - 1) < command['fleetCount']:
+					if self.map.planets[command['sourceId']]['fleets'] == 1:
+						return None
+					else:
+						command['fleetCount'] = self.map.planets[command['sourceId']]['fleets'] - 1
 
 				# Is it move?
 				if updated_command_type == 'move':
