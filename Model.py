@@ -316,7 +316,7 @@ class Map:
 				self.game.update_stat(defender, 'planetsLost', 1)
 			self.set_planet_owner(to_id, attacker)
 			# Has the defender... lost the game?
-			if defender is not None and defender.planets is []:
+			if defender is not None and len(defender.planets) == 0:
 				self.game.manager.player_lost(defender, True)
 		else: # Defender won!
 			ret['targetOwnerChanged'] = False
