@@ -55,11 +55,9 @@ class GameManager(threading.Thread):
 		Common.console_message('Game %d started!' % game.id)
 
 		while game.state == Model.Game.IN_PROGRESS: # As long as game is not finished!
-			if self.has_game_ended(): # Has the game ended?
-				self.game_end()
-				return None
 			self.round_ready = []
 			# We wait for players to be ready
+			# TODO timeout
 			while game.state == Model.Game.IN_PROGRESS:
 				if self.has_game_ended(): # Has the game ended?
 					self.game_end()
@@ -67,6 +65,15 @@ class GameManager(threading.Thread):
 				if set(game.players).issubset(self.round_ready): # Everyone is ready!
 					break # RatajException
 				time.sleep(0.5)
+
+			# Has someone lost in the previous round?
+			for p in self.game.players:
+				if len(p.planets) == 0:
+					self.player_lost(p, True)
+			# Thus, has the game ended?
+			if self.has_game_ended():
+				self.game_end()
+				return None
 
 			self.round_commands = {}
 			round_time = Constants.ROUND_TIME
@@ -97,13 +104,13 @@ class GameManager(threading.Thread):
 			commands = self.order_commands()
 			# And now let's execute them, shall we?
 			results = self.execute_commands(commands)
+			# Then send the results to all players
+			for p in self.game.players:
+				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
 			# ...has someone won the game, accidentally?
 			if self.has_game_ended():
 				self.game_end()
 				return None
-			# Then send the results to all players
-			for p in self.game.players:
-				p.socket.send(Common.json_message('roundEnd', results, p.socket.get_next_message_id()))
 			# And to the next round!
 			self.round += 1
 
@@ -181,6 +188,8 @@ class GameManager(threading.Thread):
 		results = []
 
 		for c in commands:
+			if self.has_game_ended(): # Has game already ended?
+				return results
 			r = self.game.execute(c['player'], c['command'])
 			if r is not None: # If None, move couldn't be executed (or it was tech)
 				results.append(r)
@@ -246,13 +255,11 @@ class GameManager(threading.Thread):
 		self.game.players.remove(player)
 		self.game.players_lost.append(player)
 		del self.game.tech[player]
-		if self.has_game_ended(): # Has the game ended?
-			self.game_end()
-		else: # No?
-			for (k, p) in self.game.map.planets.items(): # Free his planets from tyranny
-				if p['player'] is player:
-					p['player'] = None
-			t = datetime.today().strftime('%H:%M')
+		for (k, p) in self.game.map.planets.items(): # Free his planets from tyranny
+			if p['player'] is player:
+				p['player'] = None
+		t = datetime.today().strftime('%H:%M')
+		if not self.has_game_ended(): # If game has ended, nobody cares about players leaving
 			for p in self.game.players: # Let's notify others about player loss!
 				p.socket.send(Common.json_message('gamePlayerLeft', {'username': player.username, 'time': t}, p.socket.get_next_message_id()))
 		if send_game_end: # Does the player still care, or has he just... disconnected?

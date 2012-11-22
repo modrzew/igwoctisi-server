@@ -1,7 +1,7 @@
 # -*- coding: utf-8 *-*
 
 # Round time
-ROUND_TIME = 300
+ROUND_TIME = 60
 
 # Cost of tech upgrades
 TECH_COST = {
