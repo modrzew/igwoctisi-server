@@ -3,6 +3,8 @@ from django.contrib.auth import user_logged_in
 from sqlalchemy import *
 from sqlalchemy.sql import select
 from sqlalchemy.pool import StaticPool
+import hmac
+import hashlib
 
 CONFIG = {
 	'host': '127.0.0.1',
@@ -31,6 +33,7 @@ def connect():
 
 def login(username, password):
 	global CONNECTION
+	password = hmac.new('wotxD', password, hashlib.sha256).hexdigest()
 	s = select([func.count('*')]).where(and_(Schema.users.c.username == username, Schema.users.c.password == password)).select_from(Schema.users)
 	rs = CONNECTION.execute(s)
 	row = rs.fetchone()
