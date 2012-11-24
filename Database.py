@@ -3,7 +3,18 @@ from sqlalchemy import *
 from sqlalchemy.sql import select
 from sqlalchemy.pool import StaticPool
 
-engine = create_engine('sqlite:///IGWOCTISI.db', connect_args={'check_same_thread':False}, poolclass=StaticPool, echo=True)
+CONFIG = {
+	'host': '127.0.0.1',
+	'username': 'igwoctisi',
+	'password': 'zpi',
+	'database': 'igwoctisi'
+#	'host': 'mysql.mydevil.net',
+#	'username': 'm12056_igwoctisi',
+#	'password': 'zpi',
+#	'database': 'm12056_igwoctisi'
+}
+
+engine = create_engine('mysql://%s:%s@%s/%s' % (CONFIG['username'], CONFIG['password'], CONFIG['host'], CONFIG['database']), pool_recycle=3600*24)
 connection = engine.connect()
 meta = MetaData()
 
