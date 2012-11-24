@@ -1,5 +1,6 @@
 # -*- coding: utf-8 *-*
 import Communication
+import Database
 import Common
 import Model
 import sys
@@ -16,6 +17,8 @@ if __name__ == "__main__":
 			if a[0:2] == '--':
 				if a == '--debug':
 					Communication.DEBUG_MODE = True
+				if a == '--database':
+					Database.connect()
 				if a == '--logging': # Turn on logging
 					filename = 'logs/%d.txt' % time.time()
 					Common.console_message('Saving log to %s' % filename)

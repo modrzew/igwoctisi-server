@@ -22,7 +22,7 @@ class NotLoggedIn:
 		if request['type'] == 'login':
 			if 'username' not in request['object'] or 'password' not in request['object']:
 				return Common.json_error('invalidParameters', request['id'])
-			if request['object']['username'] in [p.username for p in Model.players] or Database.login(request['object']['username'], request['object']['password']):
+			if request['object']['username'] in [p.username for p in Model.players] or (Database.USING_DATABASE and not Database.login(request['object']['username'], request['object']['password'])):
 				return Common.json_error('loginFailed', request['id'])
 			player.username = request['object']['username']
 			player.state = LoggedIn()
