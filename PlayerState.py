@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 import Model
 import Common
+import Database
 from datetime import datetime
 import random
 
@@ -21,12 +22,13 @@ class NotLoggedIn:
 		if request['type'] == 'login':
 			if 'username' not in request['object'] or 'password' not in request['object']:
 				return Common.json_error('invalidParameters', request['id'])
-			if request['object']['username'] in [p.username for p in Model.players]:
+			if request['object']['username'] in [p.username for p in Model.players] or Database.login(request['object']['username'], request['object']['password']):
 				return Common.json_error('loginFailed', request['id'])
 			player.username = request['object']['username']
 			player.state = LoggedIn()
 			Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
 			return Common.json_ok(request['id'])
+
 		return Common.json_error('invalidCommand', request['id'])
 
 	def disconnect(self, player):
