@@ -5,17 +5,12 @@ from sqlalchemy.sql import select
 from sqlalchemy.pool import StaticPool
 import hmac
 import hashlib
+try:
+	import Config
+except ImportError:
+	raise Exception('Config module not found')
 
-CONFIG = {
-	'host': '127.0.0.1',
-	'username': 'igwoctisi',
-	'password': 'zpi',
-	'database': 'igwoctisi'
-#	'host': 'mysql.mydevil.net',
-#	'username': 'm12056_igwoctisi',
-#	'password': 'zpi',
-#	'database': 'm12056_igwoctisi'
-}
+CONFIG = Config.DATABASE
 
 ENGINE = create_engine('mysql://%s:%s@%s/%s' % (CONFIG['username'], CONFIG['password'], CONFIG['host'], CONFIG['database']), pool_recycle=3600*24)
 CONNECTION = None
