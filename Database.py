@@ -8,6 +8,7 @@ ENGINE = None
 CONNECTION = None
 USING_DATABASE = False
 META = None
+CONFIG = None
 
 class Schema:
 	pass
