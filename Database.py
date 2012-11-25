@@ -1,8 +1,6 @@
 # -*- coding: utf-8 *-*
-from django.contrib.auth import user_logged_in
 from sqlalchemy import *
 from sqlalchemy.sql import select
-from sqlalchemy.pool import StaticPool
 import hmac
 import hashlib
 try:
