@@ -14,6 +14,7 @@ class Player:
 	def __init__(self, socket):
 		self.socket = socket
 		self.username = ''
+		self.id = ''
 		self.state = None
 		self.current_game = None
 		self.planets = []
@@ -38,6 +39,7 @@ class Game:
 		self.max_players = 0
 		self.hosting_player = None
 		self.manager = GameManager(self)
+		self.time = 0
 		last_game_id += 1
 
 	def valid(self, player, command, is_precheck):

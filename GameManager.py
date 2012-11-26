@@ -6,6 +6,7 @@ import PlayerState
 import threading
 import time
 import random
+import Database
 from datetime import datetime
 
 
@@ -201,6 +202,7 @@ class GameManager(threading.Thread):
 		Ends the game
 		"""
 		self.game.state = Model.Game.FINISHED
+		self.game.time = int(time.time() - self.game_start_time)
 		for p in self.game.players:
 			message = self.game_end_message()
 			message['endType'] = 'gameEnd'
@@ -208,6 +210,8 @@ class GameManager(threading.Thread):
 			p.planets = []
 			p.state = PlayerState.LoggedIn()
 			p.socket.send(Common.json_message('gameEnd', message, p.socket.get_next_message_id()))
+		if Database.USING_DATABASE:
+			Database.save_game(self.game)
 		if self.game in Model.games:
 			Model.games.remove(self.game)
 
@@ -237,7 +241,7 @@ class GameManager(threading.Thread):
 		Checks whether game has ended already
 		"""
 		# No players left
-		if self.game.players is []:
+		if self.game.players == []:
 			return True
 		# Only one player remaining, in case there were others
 		if len(self.game.players) == 1 and len(self.game.players_lost) > 0:
