@@ -1,8 +1,7 @@
 # -*- coding: utf-8 *-*
 from sqlalchemy import *
 from sqlalchemy.sql import select
-import hmac
-import hashlib
+import math
 
 ENGINE = None
 CONNECTION = None
@@ -67,11 +66,16 @@ def save_game(game):
 	places = game.players_lost + game.players
 	places.reverse()
 	for p in places:
-		points = 5
+		place = places.index(p) + 1
+		places_length = len(places)
+		if place < math.ceil(places_length/2.0):
+			points = game.map.points * math.pow(0.5, place)
+		else:
+			points = -game.map.points * math.pow(0.5, (places_length - place + 1))
 		values = {
 			'game_id': game.id,
 			'user_id': p.id,
-			'place': places.index(p) + 1,
+			'place': place,
 			'points': points
 		}
 		ins = insert(Schema.places, values)

@@ -200,6 +200,7 @@ class Map:
 		self.game = game
 
 		self.name = map['name']
+		self.points = map['points']
 		# Planet
 		self.planets = {}
 		for planet in map['planets']:
