@@ -38,6 +38,10 @@ class GameManager(threading.Thread):
 		self.round_ready = []
 		self.round_fleets_to_deploy = {}
 
+		# Do not create game entry in database if a player is autistic enough to play with themselves
+		if len(game.players) > 1 and Database.USING_DATABASE:
+			Database.create_game(self.game)
+
 		for p in game.players:
 			# Set 0 level tech for everyone
 			game.tech[p] = {
@@ -232,7 +236,8 @@ class GameManager(threading.Thread):
 			'places': places,
 			'rounds': self.round,
 			'time': int(time.time() - self.game_start_time),
-			'stats': stats
+			'stats': stats,
+			'id': self.game.id
 		}
 		return ret
 
