@@ -59,17 +59,26 @@ def save_game(game):
 	where = {
 		'id': game.id
 	}
-	CONNECTION.execute(update(Schema.games).where(Schema.games.c.id==game.id).values(values))
+	CONNECTION.execute(
+		update(Schema.games)
+		.where(Schema.games.c.id==game.id)
+		.values(values)
+	)
 	places = game.players_lost + game.players
 	places.reverse()
 	for p in places:
+		points = 5
 		values = {
 			'game_id': game.id,
 			'user_id': p.id,
 			'place': places.index(p) + 1,
-			'points': 0
+			'points': points
 		}
 		ins = insert(Schema.places, values)
 		CONNECTION.execute(ins)
-		# TODO jak zrobic update users set points=points+x
-		#CONNECTION.execute(update(Schema.users).where(Schema.user.c.id==p.id).values(values))
+		# Update user points
+		CONNECTION.execute(
+			update(Schema.users)
+			.where(Schema.users.c.id==p.id)
+			.values({Schema.users.c.points:Schema.users.c.points+points})
+		)
