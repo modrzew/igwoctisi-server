@@ -237,7 +237,7 @@ class GameManager(threading.Thread):
 			'rounds': self.round,
 			'time': int(time.time() - self.game_start_time),
 			'stats': stats,
-			'id': self.game.id
+			'gameId': self.game.id
 		}
 		return ret
 

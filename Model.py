@@ -7,14 +7,13 @@ import math
 
 players = []
 games = []
-last_game_id = 1
 
 
 class Player:
 	def __init__(self, socket):
 		self.socket = socket
 		self.username = ''
-		self.id = ''
+		self.id = 0
 		self.state = None
 		self.current_game = None
 		self.planets = []
@@ -30,7 +29,7 @@ class Game:
 		global last_game_id
 		self.players = []
 		self.players_lost = []
-		self.id = last_game_id
+		self.id = 0
 		self.state = Game.NOT_STARTED
 		self.name = ''
 		self.map = None
@@ -40,7 +39,6 @@ class Game:
 		self.hosting_player = None
 		self.manager = GameManager(self)
 		self.time = 0
-		last_game_id += 1
 
 	def valid(self, player, command, is_precheck):
 		"""
