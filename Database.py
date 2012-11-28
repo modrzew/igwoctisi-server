@@ -68,10 +68,10 @@ def save_game(game):
 	for p in places:
 		place = places.index(p) + 1
 		places_length = len(places)
-		if place < math.ceil(places_length/2.0):
-			points = game.map.points * math.pow(0.5, place)
+		if place <= math.ceil(places_length/2.0):
+			points = int(round(game.map.points * math.pow(0.5, place)))
 		else:
-			points = -game.map.points * math.pow(0.5, (places_length - place + 1))
+			points = int(round(-game.map.points * math.pow(0.5, (places_length - place + 1))))
 		values = {
 			'game_id': game.id,
 			'user_id': p.id,
