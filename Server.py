@@ -33,6 +33,7 @@ if __name__ == "__main__":
 
 	# Create server object
 	server = Communication.Server((HOST, PORT), Communication.RequestHandler)
+	server.allow_reuse_address = True
 	ip, port = server.server_address
 	Common.console_message('Server started on %s at %d!' % (HOST, PORT))
 	if Communication.DEBUG_MODE:
