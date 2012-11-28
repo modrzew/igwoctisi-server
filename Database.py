@@ -76,7 +76,7 @@ def save_game(game):
 			'game_id': game.id,
 			'user_id': p.id,
 			'place': place,
-			'points': points
+			'points': int(round(points))
 		}
 		ins = insert(Schema.places, values)
 		CONNECTION.execute(ins)

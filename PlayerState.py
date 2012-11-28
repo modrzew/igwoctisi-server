@@ -32,7 +32,7 @@ class NotLoggedIn:
 			player.id = player_id
 			player.username = request['object']['username']
 			player.state = LoggedIn()
-			Common.console_message('%s logged in as %s' % (player.socket.request.getpeername()[0], player.username))
+			Common.console_message('%s logged in as %s (%d)' % (player.socket.request.getpeername()[0], player.username, player.id))
 			return Common.json_ok(request['id'])
 
 		return Common.json_error('invalidCommand', request['id'])
