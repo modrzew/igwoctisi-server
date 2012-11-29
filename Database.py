@@ -44,6 +44,7 @@ def create_game(game):
 	global CONNECTION
 	values = {
 		'name': game.name,
+		'status': 1
 	}
 	ins = insert(Schema.games, values=values)
 	result = CONNECTION.execute(ins)
@@ -53,7 +54,8 @@ def create_game(game):
 def save_game(game):
 	global CONNECTION
 	values = {
-		'time': game.time
+		'time': game.time,
+		'status': 2
 	}
 	where = {
 		'id': game.id

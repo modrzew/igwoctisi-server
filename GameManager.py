@@ -127,7 +127,8 @@ class GameManager(threading.Thread):
 		commands_temp = {'tech': [], 'deploy': [], 'move': []}
 		for c in commands:
 			if not self.game.valid(player, c, True): # Invalid command
-				return False
+				#return False
+				continue
 
 			c['sourceId'] = int(c['sourceId'])
 			c['targetId'] = int(c['targetId'])
@@ -142,7 +143,8 @@ class GameManager(threading.Thread):
 					commands_temp['tech'].append(c)
 		# Check if player has not deployed more than they have
 		if sum([c['fleetCount'] for c in commands_temp['deploy']]) > self.round_fleets_to_deploy[player]:
-			return False
+			#return False
+			pass
 		self.round_commands[player] = commands_temp
 		return True
 
