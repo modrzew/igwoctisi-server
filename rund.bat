@@ -1,1 +1,1 @@
-python Server.py --debug --logging
+python Server.py --debug --logging --port 23456

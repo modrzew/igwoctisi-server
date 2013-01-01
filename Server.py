@@ -10,7 +10,7 @@ import os
 
 if __name__ == "__main__":
 	# Define the default server address
-	HOST, PORT = "localhost", 23456
+	HOST, PORT = "0.0.0.0", 23456
 	# Get the command line parameters
 	for i, a in enumerate(sys.argv):
 		if i > 0: # First entry is filename
